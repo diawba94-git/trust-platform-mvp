@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Degya",
+    "slug": "degya-wallet",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.trustwedge.wallet",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Degya utilise l'appareil photo pour scanner un QR code d'attestation.",
+        "NSFaceIDUsageDescription": "Degya utilise Face ID pour protéger l'accès à vos attestations et à votre clé privée."
+      }
+    },
+    "android": {
+      "package": "com.trustwedge.wallet",
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Degya utilise l'appareil photo pour scanner un QR code d'attestation."
+        }
+      ],
+      "expo-secure-store",
+      "expo-sharing"
+    ],
+    "extra": {
+      "trustwedgeApiUrl": "http://192.168.1.80:8000/api",
+      "trustwedgeBesuRpcUrl": "http://127.0.0.1:8645"
+    }
+  }
+}

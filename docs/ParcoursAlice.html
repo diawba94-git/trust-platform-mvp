@@ -1,0 +1,794 @@
+<title>Le Parcours d'Alice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#F5F7F2;
+    --surface:#FFFFFF;
+    --surface-2:#EEF2EA;
+    --ink:#1C2B21;
+    --ink-soft:#4B5C4F;
+    --ink-faint:#7C8B7F;
+    --line:#DDE4D8;
+    --line-soft:#E9EEE5;
+    --primary:#1A6E3E;
+    --primary-deep:#0E4426;
+    --primary-wash:#E7F1EA;
+    --accent:#C97A2B;
+    --accent-deep:#9C5C1B;
+    --accent-wash:#FBEEDD;
+    --warn-bg:#FDF2E3;
+    --warn-ink:#8A4B12;
+    --warn-line:#F0D6A6;
+
+    --c-admin:#6B4FA0;
+    --c-admin-wash:#F1ECF8;
+    --c-univ:#2C6E8F;
+    --c-univ-wash:#E9F2F6;
+    --c-verif:#1A6E3E;
+    --c-verif-wash:#E7F1EA;
+    --c-notary:#A6432E;
+    --c-notary-wash:#F8EAE6;
+    --c-alice:#C97A2B;
+    --c-alice-wash:#FBEEDD;
+
+    --font-display:'Fraunces', 'Iowan Old Style', Georgia, serif;
+    --font-body:'Public Sans', 'Segoe UI', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+
+    --radius:10px;
+    --radius-sm:6px;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10160F;
+      --surface:#161F14;
+      --surface-2:#1C2619;
+      --ink:#EDEFEA;
+      --ink-soft:#B7C2B4;
+      --ink-faint:#7E8B7A;
+      --line:#2A3527;
+      --line-soft:#212C1E;
+      --primary:#4CB374;
+      --primary-deep:#8FDBAA;
+      --primary-wash:#17281D;
+      --accent:#E3A65B;
+      --accent-deep:#F0C182;
+      --accent-wash:#2E2214;
+      --warn-bg:#2E2412;
+      --warn-ink:#F0C182;
+      --warn-line:#4A3A1C;
+
+      --c-admin:#B092E0;
+      --c-admin-wash:#241C33;
+      --c-univ:#6FB3D6;
+      --c-univ-wash:#182529;
+      --c-verif:#4CB374;
+      --c-verif-wash:#17281D;
+      --c-notary:#E0836A;
+      --c-notary-wash:#2C1C17;
+      --c-alice:#E3A65B;
+      --c-alice-wash:#2E2214;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10160F;
+    --surface:#161F14;
+    --surface-2:#1C2619;
+    --ink:#EDEFEA;
+    --ink-soft:#B7C2B4;
+    --ink-faint:#7E8B7A;
+    --line:#2A3527;
+    --line-soft:#212C1E;
+    --primary:#4CB374;
+    --primary-deep:#8FDBAA;
+    --primary-wash:#17281D;
+    --accent:#E3A65B;
+    --accent-deep:#F0C182;
+    --accent-wash:#2E2214;
+    --warn-bg:#2E2412;
+    --warn-ink:#F0C182;
+    --warn-line:#4A3A1C;
+
+    --c-admin:#B092E0;
+    --c-admin-wash:#241C33;
+    --c-univ:#6FB3D6;
+    --c-univ-wash:#182529;
+    --c-verif:#4CB374;
+    --c-verif-wash:#17281D;
+    --c-notary:#E0836A;
+    --c-notary-wash:#2C1C17;
+    --c-alice:#E3A65B;
+    --c-alice-wash:#2E2214;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent-wash); color:var(--ink); }
+
+  a{ color:var(--primary-deep); }
+
+  .wrap{
+    max-width:820px;
+    margin:0 auto;
+    padding:64px 24px 96px;
+  }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--primary-deep);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:22px;
+    height:1.5px;
+    background:var(--primary-deep);
+    display:inline-block;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:clamp(2.4rem, 5vw, 3.4rem);
+    line-height:1.05;
+    letter-spacing:-.01em;
+    margin:14px 0 18px;
+    text-wrap:balance;
+    color:var(--ink);
+  }
+  .lede{
+    font-size:1.09rem;
+    color:var(--ink-soft);
+    max-width:62ch;
+    margin:0 0 8px;
+  }
+  .lede strong{ color:var(--ink); font-weight:600; }
+
+  /* ---------- Actor legend ---------- */
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:32px 0 0;
+    padding:20px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+  }
+  .legend-title{
+    width:100%;
+    font-family:var(--font-mono);
+    font-size:11.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    margin-bottom:4px;
+  }
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    padding:6px 12px 6px 10px;
+    border-radius:999px;
+    font-size:13.5px;
+    font-weight:600;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .tag .dot{
+    width:8px; height:8px; border-radius:50%;
+    flex:none;
+  }
+  .tag.admin{ background:var(--c-admin-wash); color:var(--c-admin); }
+  .tag.admin .dot{ background:var(--c-admin); }
+  .tag.univ{ background:var(--c-univ-wash); color:var(--c-univ); }
+  .tag.univ .dot{ background:var(--c-univ); }
+  .tag.alice{ background:var(--c-alice-wash); color:var(--c-alice-deep, var(--accent-deep)); }
+  .tag.alice .dot{ background:var(--c-alice); }
+  .tag.verif{ background:var(--c-verif-wash); color:var(--c-verif); }
+  .tag.verif .dot{ background:var(--c-verif); }
+  .tag.notary{ background:var(--c-notary-wash); color:var(--c-notary); }
+  .tag.notary .dot{ background:var(--c-notary); }
+
+  /* ---------- Callout ---------- */
+  .callout{
+    margin:28px 0 0;
+    padding:18px 20px;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-left:3px solid var(--primary);
+    border-radius:var(--radius-sm);
+    font-size:14.5px;
+    color:var(--ink-soft);
+  }
+  .callout b{ color:var(--ink); }
+  .callout code, .kbd{
+    font-family:var(--font-mono);
+    font-size:.92em;
+    background:var(--surface);
+    border:1px solid var(--line);
+    padding:1.5px 6px;
+    border-radius:5px;
+    color:var(--ink);
+  }
+
+  /* ---------- Section dividers ---------- */
+  .part-title{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:1.5rem;
+    margin:64px 0 6px;
+    color:var(--ink);
+    text-wrap:balance;
+  }
+  .part-sub{
+    font-size:14.5px;
+    color:var(--ink-faint);
+    margin:0 0 28px;
+  }
+
+  /* ---------- Timeline ---------- */
+  .timeline{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:0;
+  }
+  .phase{
+    position:relative;
+    display:grid;
+    grid-template-columns:56px 1fr;
+    gap:20px;
+    padding-bottom:34px;
+  }
+  .phase:last-child{ padding-bottom:0; }
+  .rail{
+    position:relative;
+    display:flex;
+    justify-content:center;
+  }
+  .rail::before{
+    content:"";
+    position:absolute;
+    top:44px; bottom:-34px;
+    width:1.5px;
+    background:var(--line);
+  }
+  .phase:last-child .rail::before{ display:none; }
+  .num{
+    width:40px; height:40px;
+    border-radius:50%;
+    background:var(--surface);
+    border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+    z-index:1;
+    flex:none;
+  }
+  .phase.admin .num{ border-color:var(--c-admin); color:var(--c-admin); }
+  .phase.univ .num{ border-color:var(--c-univ); color:var(--c-univ); }
+  .phase.alice .num{ border-color:var(--c-alice); color:var(--c-alice-deep, var(--accent-deep)); }
+  .phase.verif .num{ border-color:var(--c-verif); color:var(--c-verif); }
+  .phase.notary .num{ border-color:var(--c-notary); color:var(--c-notary); }
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 24px;
+  }
+  .card-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:4px;
+  }
+  .card h3{
+    font-family:var(--font-display);
+    font-weight:600;
+    font-size:1.2rem;
+    margin:0;
+    color:var(--ink);
+  }
+  .route{
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--ink-faint);
+    white-space:nowrap;
+  }
+  .route .path{ color:var(--primary-deep); font-weight:500; }
+
+  .steps{
+    list-style:none;
+    margin:16px 0 0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .steps li{
+    display:flex;
+    gap:10px;
+    font-size:14.5px;
+    color:var(--ink-soft);
+    align-items:flex-start;
+  }
+  .steps li::before{
+    content:"";
+    width:5px; height:5px;
+    border-radius:50%;
+    background:var(--ink-faint);
+    margin-top:8px;
+    flex:none;
+  }
+  .steps li b{ color:var(--ink); font-weight:600; }
+
+  .field{
+    font-family:var(--font-mono);
+    font-size:.88em;
+    color:var(--ink);
+    background:var(--surface-2);
+    border:1px solid var(--line-soft);
+    padding:1px 7px;
+    border-radius:5px;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:.88em;
+    color:var(--primary-deep);
+    background:var(--primary-wash);
+    border:1px solid color-mix(in srgb, var(--primary) 35%, var(--line));
+    padding:2px 10px;
+    border-radius:999px;
+  }
+
+  .result{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px dashed var(--line);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+    font-size:14px;
+    color:var(--ink-soft);
+  }
+  .result b{ color:var(--ink); font-weight:600; }
+
+  .pill{
+    font-family:var(--font-mono);
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.03em;
+    padding:3px 9px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .pill.pending{ background:var(--surface-2); color:var(--ink-faint); border:1px solid var(--line); }
+  .pill.progress{ background:var(--c-univ-wash); color:var(--c-univ); }
+  .pill.awaiting{ background:var(--warn-bg); color:var(--warn-ink); border:1px solid var(--warn-line); }
+  .pill.done{ background:var(--c-verif-wash); color:var(--c-verif); }
+
+  /* ---------- Reference tables ---------- */
+  .ref{
+    margin-top:64px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+  }
+  @media (max-width:640px){ .ref{ grid-template-columns:1fr; } }
+  .ref-box{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px 22px;
+    overflow-x:auto;
+  }
+  .ref-box h4{
+    font-family:var(--font-display);
+    font-size:1.02rem;
+    font-weight:600;
+    margin:0 0 14px;
+    color:var(--ink);
+  }
+  table{ border-collapse:collapse; width:100%; font-size:13.5px; }
+  th{
+    text-align:left;
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-faint);
+    font-weight:600;
+    padding:0 0 8px;
+    border-bottom:1px solid var(--line);
+  }
+  td{
+    padding:8px 0;
+    border-bottom:1px solid var(--line-soft);
+    color:var(--ink-soft);
+    vertical-align:top;
+  }
+  tr:last-child td{ border-bottom:none; }
+  td.k{ font-family:var(--font-mono); color:var(--ink); white-space:nowrap; padding-right:14px; }
+
+  .warn-note{
+    margin-top:56px;
+    padding:18px 20px;
+    background:var(--warn-bg);
+    border:1px solid var(--warn-line);
+    border-radius:var(--radius-sm);
+    font-size:14px;
+    color:var(--warn-ink);
+  }
+
+  footer{
+    margin-top:72px;
+    padding-top:22px;
+    border-top:1px solid var(--line);
+    font-size:12.5px;
+    color:var(--ink-faint);
+    font-family:var(--font-mono);
+  }
+</style>
+
+<div class="wrap">
+
+  <div class="eyebrow">TrustWedge — guide d'utilisation</div>
+  <h1>Le parcours d'Alice</h1>
+  <p class="lede">
+    Du <strong>DID</strong> délivré par l'Admin jusqu'au titre foncier transféré sous validation
+    notariale, ce document rejoue à la main, écran par écran, le cycle de confiance complet
+    de la plateforme — diplôme, emploi, prêt, foncier — tel qu'il se pilote dans l'interface,
+    sans passer par l'API.
+  </p>
+
+  <div class="legend">
+    <div class="legend-title">Les cinq rôles qui interviennent dans le parcours</div>
+    <span class="tag admin"><span class="dot"></span>Admin</span>
+    <span class="tag univ"><span class="dot"></span>Université · ISSUER</span>
+    <span class="tag alice"><span class="dot"></span>Alice · USER</span>
+    <span class="tag verif"><span class="dot"></span>Entreprise / Banque · VERIFIER</span>
+    <span class="tag notary"><span class="dot"></span>Notaire / État · NOTARY</span>
+  </div>
+
+  <div class="callout">
+    <b>Avant de commencer —</b> chaque acteur se connecte sur
+    <code>http://localhost:3000/login</code> avec son email et <b>n'importe quel mot de passe</b>
+    (le MVP ne vérifie que l'adresse email). La navbar affiche ensuite un lien vers le tableau
+    de bord correspondant à son rôle.
+  </div>
+
+  <!-- ================= PARTIE I ================= -->
+  <div class="part-title">I. Créer les identités numériques</div>
+  <p class="part-sub">Un seul acteur peut faire naître tous les autres : l'Admin.</p>
+
+  <div class="timeline">
+
+    <div class="phase admin">
+      <div class="rail"><div class="num">1</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>L'Admin crée un acteur et génère son DID</h3>
+          <span class="route">navbar → <span class="path">Créer un acteur</span></span>
+        </div>
+        <ul class="steps">
+          <li>Remplir <span class="field">Email</span>, <span class="field">Nom complet</span>,
+            choisir un <span class="field">Rôle</span> (Utilisateur, Émetteur, Vérificateur ou Notaire)</li>
+          <li>Cliquer <span class="btn">Créer l'acteur et générer son DID</span> — la génération est
+            automatique, aucune confirmation supplémentaire à donner</li>
+          <li>Répéter l'opération pour chacun des cinq comptes nécessaires à ce parcours :
+            <b>Université</b> (ISSUER), <b>Alice</b> (USER), <b>Entreprise</b> (VERIFIER),
+            <b>Banque</b> (VERIFIER), <b>Notaire</b> (NOTARY)</li>
+        </ul>
+        <div class="result">
+          <span class="pill done">Résultat</span>
+          <span>DID, adresse et <b>clé privée</b> affichés une seule fois — à copier et transmettre à l'acteur concerné.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= PARTIE II ================= -->
+  <div class="part-title">II. Le diplôme</div>
+  <p class="part-sub">L'Université certifie, Alice partage, l'Entreprise vérifie.</p>
+
+  <div class="timeline">
+
+    <div class="phase univ">
+      <div class="rail"><div class="num">2</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>L'Université émet le diplôme d'Alice</h3>
+          <span class="route">navbar → <span class="path">Université</span></span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Nouveau diplôme</b>, choisir <span class="field">Destinataire</span> = Alice</li>
+          <li>Renseigner <span class="field">Filière</span>, <span class="field">Date de diplôme</span>,
+            <span class="field">Mention</span></li>
+          <li>Cliquer <span class="btn">Émettre</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill done">Résultat</span>
+          <span>Le diplôme est minté on-chain et son <b>Token ID</b> s'affiche en confirmation.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase alice">
+      <div class="rail"><div class="num">3</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Alice demande une vérification à l'Entreprise</h3>
+          <span class="route">navbar → <span class="path">Mon Espace</span></span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Mes documents</b>, la carte du diplôme apparaît — <span class="btn">Vérifier</span>
+            en confirme l'authenticité on-chain à tout moment</li>
+          <li>Cliquer <span class="btn">Demander une vérification</span></li>
+          <li>Choisir le <span class="field">Destinataire</span> (l'Entreprise, seuls les comptes
+            VERIFIER sont proposés), ajouter un <span class="field">Message</span> facultatif,
+            puis <span class="btn">Envoyer</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill awaiting">Awaiting verification</span>
+          <span>La demande enchaîne automatiquement création, démarrage et envoi du workflow.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase verif">
+      <div class="rail"><div class="num">4</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>L'Entreprise traite la demande</h3>
+          <span class="route">navbar → <span class="path">Vérification</span></span>
+        </div>
+        <ul class="steps">
+          <li>La demande apparaît dans <b>Demandes de vérification en attente</b> —
+            🎓 Vérification de diplôme</li>
+          <li>Cliquer <span class="btn">Traiter</span>, ajouter une note, puis
+            <span class="btn">Accepter</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill progress">In progress</span>
+          <span>Le diplôme d'Alice est officiellement vérifié.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= PARTIE III ================= -->
+  <div class="part-title">III. L'emploi et le prêt</div>
+  <p class="part-sub">La confiance accumulée ouvre un crédit.</p>
+
+  <div class="timeline">
+
+    <div class="phase verif">
+      <div class="rail"><div class="num">5</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>L'Entreprise émet l'attestation d'emploi</h3>
+          <span class="route">même page → <span class="path">Émettre une attestation d'emploi</span></span>
+        </div>
+        <ul class="steps">
+          <li><span class="field">Destinataire</span> = Alice</li>
+          <li><span class="field">Poste</span>, <span class="field">Date d'entrée</span>,
+            <span class="field">Salaire mensuel</span></li>
+          <li><span class="btn">Émettre</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill done">Résultat</span>
+          <span>Nouveau document EMPLOYMENT dans les <b>Mes documents</b> d'Alice.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase alice">
+      <div class="rail"><div class="num">6</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Alice demande un prêt à la Banque</h3>
+          <span class="route">navbar → <span class="path">Mon Espace</span></span>
+        </div>
+        <ul class="steps">
+          <li>Sur la carte de l'attestation d'emploi, cliquer <span class="btn">Demander un prêt</span></li>
+          <li>Choisir la <span class="field">Destinataire</span> (Banque), renseigner le
+            <span class="field">Montant du prêt (FCFA)</span> — <b>obligatoire</b>, c'est
+            l'information clé pour la banque</li>
+          <li><span class="btn">Envoyer</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill awaiting">Awaiting verification</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase verif">
+      <div class="rail"><div class="num">7</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>La Banque accorde le prêt</h3>
+          <span class="route">navbar → <span class="path">Vérification</span></span>
+        </div>
+        <ul class="steps">
+          <li>La demande apparaît en 🏦 Demande de prêt, avec le
+            <b>montant affiché en gras</b> directement dans la liste et dans la fenêtre de traitement</li>
+          <li><span class="btn">Traiter</span> → <span class="btn">Accepter</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill progress">In progress</span>
+          <span>Le prêt est accordé.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ================= PARTIE IV ================= -->
+  <div class="part-title">IV. Le titre foncier</div>
+  <p class="part-sub">Authentification puis validation notariale — le seul circuit à deux passages.</p>
+
+  <div class="timeline">
+
+    <div class="phase notary">
+      <div class="rail"><div class="num">8</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Le Notaire (ou l'Admin) enregistre un titre pour Alice</h3>
+          <span class="route"><span class="path">État</span> ou <span class="path">Créer un acteur</span> (bas de page)</span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Enregistrer un titre foncier</b> : <span class="field">Destinataire</span> = Alice</li>
+          <li><span class="field">Superficie</span>, <span class="field">Localisation</span>,
+            <span class="field">Valeur estimée</span></li>
+          <li><span class="btn">Émettre</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill done">Résultat</span>
+          <span>Titre LAND_TITLE transférable, propriété d'Alice.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase alice">
+      <div class="rail"><div class="num">9</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Alice demande le transfert de son titre</h3>
+          <span class="route">navbar → <span class="path">Mon Espace</span></span>
+        </div>
+        <ul class="steps">
+          <li>Sur la carte du titre foncier, cliquer <span class="btn">Demander un transfert</span></li>
+          <li><span class="field">Destinataire</span> = Notaire (seuls les comptes NOTARY sont proposés)</li>
+          <li><span class="btn">Envoyer</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill awaiting">Awaiting verification</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase notary">
+      <div class="rail"><div class="num">10</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Le Notaire authentifie le titre</h3>
+          <span class="route">navbar → <span class="path">État</span></span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Titres fonciers à authentifier</b>, <span class="btn">Traiter</span> →
+            <span class="btn">Accepter</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill progress">In progress</span>
+          <span>Le titre est authentifié — mais le transfert n'est pas encore acté.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase alice">
+      <div class="rail"><div class="num">11</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Alice sollicite la validation notariale finale</h3>
+          <span class="route">navbar → <span class="path">Mon Espace</span></span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Mes démarches</b>, le transfert repasse en <span class="pill progress">In progress</span> —
+            un bouton apparaît alors :</li>
+          <li><span class="btn">Demander validation notariale</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill awaiting">Awaiting notary</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase notary">
+      <div class="rail"><div class="num">12</div></div>
+      <div class="card">
+        <div class="card-head">
+          <h3>Le Notaire valide définitivement le transfert</h3>
+          <span class="route">navbar → <span class="path">État</span></span>
+        </div>
+        <ul class="steps">
+          <li>Dans <b>Validations notariales en attente</b>, <span class="btn">Valider</span></li>
+          <li>Renseigner le <span class="field">Hash de la transaction blockchain</span> (facultatif)
+            et des <span class="field">Notes de validation</span></li>
+          <li><span class="btn">Valider</span></li>
+        </ul>
+        <div class="result">
+          <span class="pill done">Completed</span>
+          <span>Le titre foncier d'Alice est officiellement transféré.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="warn-note">
+    <b>À noter —</b> Alice peut consulter à tout moment son <b>DID</b>, son <b>adresse</b> et sa
+    <b>clé privée</b> (masquée par défaut) dans <span class="field">Mon Profil</span>, accessible
+    depuis la navbar quel que soit son rôle.
+  </div>
+
+  <!-- ================= REFERENCE ================= -->
+  <div class="ref">
+    <div class="ref-box">
+      <h4>Tableaux de bord par rôle</h4>
+      <table>
+        <thead><tr><th>Rôle</th><th>Lien navbar</th></tr></thead>
+        <tbody>
+          <tr><td class="k">ADMIN</td><td>Créer un acteur</td></tr>
+          <tr><td class="k">ISSUER</td><td>Université</td></tr>
+          <tr><td class="k">USER</td><td>Mon Espace</td></tr>
+          <tr><td class="k">VERIFIER</td><td>Vérification</td></tr>
+          <tr><td class="k">NOTARY</td><td>État</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ref-box">
+      <h4>Statuts d'un workflow</h4>
+      <table>
+        <thead><tr><th>Statut</th><th>Signifie</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><span class="pill pending">Pending</span></td><td>créé, pas encore démarré</td></tr>
+          <tr><td class="k"><span class="pill progress">In progress</span></td><td>en cours / étape validée</td></tr>
+          <tr><td class="k"><span class="pill awaiting">Awaiting</span></td><td>en attente d'un acteur</td></tr>
+          <tr><td class="k"><span class="pill done">Completed</span></td><td>terminé avec succès</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>TrustWedge · MVP — parcours de démonstration du cycle de confiance</footer>
+
+</div>

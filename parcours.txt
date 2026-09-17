@@ -1,0 +1,44 @@
+Au niveau IHM voila le workflow
+
+Alice demande son diplome
+Université recoit la demande et emet une attestation enregistrant dans blockchain et envoie à alice 
+Alice reçoit l'attestation du diplome
+Alice postule à une entreprise en envoyant le VC du diplome
+entreprise fait une verification a la blockchain
+Alice demande une attestation d'emploi 
+Entreprise emet l'attestion dans blockchain  lui envoie l'attestation
+Alice demande une demande de pret à la banque en lui envoyant l'attestation d'emploi
+La banque verifie le document de la blockchain si ok la demande est accordée
+Admin emet un titre foncier dans la blockchain et l'envoie au propriétaire
+Alice demande un Vc au propriétaire pour vérification avant de l'acheter
+Alice demande le transfert de propriété
+Alice demande la verification du notaire
+Alice demande une validation notariale
+
+
+Oui, votre solution gère parfaitement tout ce workflow. Vous avez couvert :
+
+✅ Émission de tous les types de documents (diplômes, attestations, titres)
+
+✅ Vérification à la blockchain par chaque acteur
+
+✅ Partage des VC entre acteurs (via les workflows)
+
+✅ Envoi des attestations aux propriétaires (liées au DID)
+
+✅ Demande de prêt avec vérification des documents
+
+✅ Transfert foncier avec validation du notaire
+
+✅ Traçabilité de toutes les étapes via la blockchain
+
+Acteur	Email	Rôle	DID
+Admin	admin@trustwedge.com	ADMIN	did:ethr:0xAdmin...
+Alice	alice@test.com	USER	did:ethr:0xAlice...
+Université	university@test.com	ISSUER	did:ethr:0xUniv...
+Entreprise	company@test.com	VERIFIER	did:ethr:0xCompany...
+Banque	bank@test.com	VERIFIER	did:ethr:0xBank...
+Notaire	notary@test.com	NOTARY	did:ethr:0xNotary...
+Propriétaire	owner@test.com	USER	did:ethr:0xOwner...
+
+

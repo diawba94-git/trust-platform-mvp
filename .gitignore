@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Docker volume data (runtime, not source)
+services/blockscout-data/
+services/ipfs-data/
+services/kong-data/
+services/postgres-data/
+services/nodes/node-*/data/
+
+# Hardhat build outputs
+services/nodes/artifacts/
+services/nodes/cache/
+
+# Blockchain node private keys
+services/nodes/networkFiles/keys/
+
+# Build outputs
+dist/
+build/
+.next/
+coverage/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+{
+  "name": "trustwedge-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "init": "node init-environment.js",
+    "test:workflow": "node test_workflow_complete.js",
+    "test:tampering": "node test_land_title_tampering.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "uuid": "^9.0.0"
+  }
+}

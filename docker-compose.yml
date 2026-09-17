@@ -1,0 +1,344 @@
+services:
+  besu-node-1:
+    image: hyperledger/besu:latest
+    container_name: trustwedge-besu-node-1
+    hostname: node-1
+    networks:
+      trustwedge-network:
+        ipv4_address: 172.26.0.10
+    ports:
+      - "30403:30303"
+      # Loopback uniquement (pas 0.0.0.0) : nécessaire pour déployer/redéployer le contrat
+      # depuis l'hôte avec Hardhat (--network besu), sans exposer le RPC au réseau/Internet.
+      - "127.0.0.1:8645:8545"
+    volumes:
+      - ./services/nodes/node-1/data:/data
+      - ./genesis.json:/genesis.json
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "besu --data-path=/data --genesis-file=/genesis.json --network-id=${BESU_NETWORK_ID}
+      --rpc-http-enabled --rpc-http-host=0.0.0.0 --rpc-http-port=8545
+      --rpc-http-api=ETH,NET,QBFT,WEB3,ADMIN,DEBUG,TXPOOL --rpc-http-cors-origins=*
+      --host-allowlist=* --p2p-enabled=true --p2p-host=0.0.0.0 --p2p-port=30303
+      --rpc-ws-enabled=true --rpc-ws-host=0.0.0.0 --rpc-ws-port=8546
+      --rpc-ws-api=ETH,NET,QBFT,WEB3,ADMIN,DEBUG,TRACE,TXPOOL --data-storage-format=BONSAI
+      --min-gas-price=${BESU_GAS_PRICE}"
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  besu-node-2:
+    image: hyperledger/besu:latest
+    container_name: trustwedge-besu-node-2
+    hostname: node-2
+    networks:
+      trustwedge-network:
+        ipv4_address: 172.26.0.11
+    ports:
+      - "30404:30303"
+    volumes:
+      - ./services/nodes/node-2/data:/data
+      - ./genesis.json:/genesis.json
+      - ./services/nodes/node-1/data:/nodes-node1:ro
+    depends_on:
+      - besu-node-1
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "besu --data-path=/data --genesis-file=/genesis.json --network-id=${BESU_NETWORK_ID}
+      --rpc-http-enabled --rpc-http-host=0.0.0.0 --rpc-http-port=8545
+      --rpc-http-api=ETH,NET,QBFT,WEB3,ADMIN --rpc-http-cors-origins=* --host-allowlist=*
+      --p2p-enabled=true --p2p-host=0.0.0.0 --p2p-port=30303 --rpc-ws-enabled=true
+      --rpc-ws-host=0.0.0.0 --rpc-ws-port=8546 --rpc-ws-api=ETH,NET,QBFT,WEB3,ADMIN,DEBUG,TRACE,TXPOOL
+      --data-storage-format=BONSAI
+      --bootnodes=enode://$$(cat /nodes-node1/key.pub | sed 's/^0x//')@172.26.0.10:30303
+      --min-gas-price=${BESU_GAS_PRICE}"
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  besu-node-3:
+    image: hyperledger/besu:latest
+    container_name: trustwedge-besu-node-3
+    hostname: node-3
+    networks:
+      trustwedge-network:
+        ipv4_address: 172.26.0.12
+    ports:
+      - "30405:30303"
+    volumes:
+      - ./services/nodes/node-3/data:/data
+      - ./genesis.json:/genesis.json
+      - ./services/nodes/node-1/data:/nodes-node1:ro
+    depends_on:
+      - besu-node-1
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "besu --data-path=/data --genesis-file=/genesis.json --network-id=${BESU_NETWORK_ID}
+      --rpc-http-enabled --rpc-http-host=0.0.0.0 --rpc-http-port=8545
+      --rpc-http-api=ETH,NET,QBFT,WEB3,ADMIN --rpc-http-cors-origins=* --host-allowlist=*
+      --p2p-enabled=true --p2p-host=0.0.0.0 --p2p-port=30303 --rpc-ws-enabled=true
+      --rpc-ws-host=0.0.0.0 --rpc-ws-port=8546 --rpc-ws-api=ETH,NET,QBFT,WEB3,ADMIN,DEBUG,TRACE,TXPOOL
+      --data-storage-format=BONSAI
+      --bootnodes=enode://$$(cat /nodes-node1/key.pub | sed 's/^0x//')@172.26.0.10:30303
+      --min-gas-price=${BESU_GAS_PRICE}"
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  besu-node-4:
+    image: hyperledger/besu:latest
+    container_name: trustwedge-besu-node-4
+    hostname: node-4
+    networks:
+      trustwedge-network:
+        ipv4_address: 172.26.0.13
+    ports:
+      - "30406:30303"
+    volumes:
+      - ./services/nodes/node-4/data:/data
+      - ./genesis.json:/genesis.json
+      - ./services/nodes/node-1/data:/nodes-node1:ro
+    depends_on:
+      - besu-node-1
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "besu --data-path=/data --genesis-file=/genesis.json --network-id=${BESU_NETWORK_ID}
+      --rpc-http-enabled --rpc-http-host=0.0.0.0 --rpc-http-port=8545
+      --rpc-http-api=ETH,NET,WEB3,DEBUG,TRACE,TXPOOL --rpc-http-cors-origins=* --host-allowlist=*
+      --p2p-enabled=true --p2p-host=0.0.0.0 --p2p-port=30303 --rpc-ws-enabled=true
+      --rpc-ws-host=0.0.0.0 --rpc-ws-port=8546 --rpc-ws-api=ETH,NET,WEB3,DEBUG,TRACE,TXPOOL
+      --data-storage-format=BONSAI
+      --bootnodes=enode://$$(cat /nodes-node1/key.pub | sed 's/^0x//')@172.26.0.10:30303
+      --min-gas-price=${BESU_GAS_PRICE}"
+    restart: unless-stopped
+    env_file:
+      - .env
+
+  blockscout-db:
+    image: postgres:15-alpine
+    container_name: trustwedge-blockscout-db
+    environment:
+      - POSTGRES_USER=blockscout
+      - POSTGRES_PASSWORD=blockscout
+      - POSTGRES_DB=blockscout
+    volumes:
+      - ./services/blockscout-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+
+  blockscout:
+    image: blockscout/blockscout:latest
+    container_name: trustwedge-blockscout
+    depends_on:
+      - blockscout-db
+      - besu-node-1
+      - besu-node-4
+    environment:
+      - DATABASE_URL=postgresql://blockscout:blockscout@blockscout-db:5432/blockscout
+      - ETHEREUM_JSONRPC_VARIANT=besu
+      - ETHEREUM_JSONRPC_HTTP_URL=http://besu-node-1:8545
+      - ETHEREUM_JSONRPC_TRACE_URL=http://besu-node-4:8545
+      - ETHEREUM_JSONRPC_WS_URL=ws://besu-node-1:8546
+      - CHAIN_ID=${BESU_CHAIN_ID}
+      - COIN=ETH
+      - NETWORK=TrustWedge
+      - SUBNETWORK=QBFT Testnet
+      - PORT=4000
+      - ECTO_USE_SSL=false
+      - DISABLE_EXCHANGE_RATES=true
+      - DISABLE_KNOWN_TOKENS=true
+      - SECRET_KEY_BASE=${BLOCKSCOUT_SECRET_KEY_BASE}
+    command: sh -c "bin/blockscout eval \"Elixir.Explorer.ReleaseTasks.create_and_migrate()\" && bin/blockscout start"
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+
+  blockscout-frontend:
+    image: ghcr.io/blockscout/frontend:latest
+    container_name: trustwedge-blockscout-frontend
+    depends_on:
+      - blockscout
+    environment:
+      # Servi via Kong (routage par Host, cf. scripts/kong-setup.sh) : évite de préfixer
+      # les chemins d'une app Next.js, qui référence ses assets en absolu depuis la racine.
+      - NEXT_PUBLIC_API_HOST=explorer-api.localhost
+      - NEXT_PUBLIC_API_PORT=8000
+      - NEXT_PUBLIC_API_PROTOCOL=http
+      - NEXT_PUBLIC_APP_HOST=explorer.localhost
+      - NEXT_PUBLIC_APP_PORT=8000
+      - NEXT_PUBLIC_APP_PROTOCOL=http
+      - NEXT_PUBLIC_NETWORK_NAME=TrustWedge
+      - NEXT_PUBLIC_NETWORK_SHORT_NAME=TrustWedge
+      - NEXT_PUBLIC_NETWORK_ID=${BESU_CHAIN_ID}
+      - NEXT_PUBLIC_IS_TESTNET=true
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: trustwedge-ipfs
+    ports:
+      - "4001:4001"
+    volumes:
+      - ./services/ipfs-data:/data/ipfs
+    environment:
+      - IPFS_PROFILE=server
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: trustwedge-postgres
+    ports:
+      - "5442:5432"
+    volumes:
+      - ./services/postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  backend:
+    build: ./services/backend
+    container_name: trustwedge-backend
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - IPFS_API_URL=${IPFS_API_URL}
+      - IPFS_GATEWAY_URL=${IPFS_GATEWAY_URL}
+      - BESU_RPC_URL=${BESU_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - JWT_SECRET=${JWT_SECRET}
+      - NODE_ENV=${NODE_ENV}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+    volumes:
+      - ./services/backend/app:/app/app
+    depends_on:
+      - postgres
+      - ipfs
+      - besu-node-1
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  frontend:
+    build:
+      context: ./services/frontend
+      args:
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_WS_URL: ${REACT_APP_WS_URL}
+    container_name: trustwedge-frontend
+    expose:
+      - "80"
+    environment:
+      - API_URL=${REACT_APP_API_URL}
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # KONG GATEWAY
+  # ==========================================
+  kong-database:
+    image: postgres:13-alpine
+    container_name: trustwedge-kong-db
+    environment:
+      - POSTGRES_USER=kong
+      - POSTGRES_PASSWORD=${KONG_PG_PASSWORD}
+      - POSTGRES_DB=kong
+    volumes:
+      - ./services/kong-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kong"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kong-migrations:
+    image: kong:3.6
+    container_name: trustwedge-kong-migrations
+    command: kong migrations bootstrap
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=${KONG_PG_PASSWORD}
+      - KONG_PG_DATABASE=kong
+    depends_on:
+      kong-database:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - trustwedge-network
+
+  kong:
+    image: kong:3.6
+    container_name: trustwedge-kong
+    environment:
+      - KONG_DATABASE=postgres
+      - KONG_PG_HOST=kong-database
+      - KONG_PG_USER=kong
+      - KONG_PG_PASSWORD=${KONG_PG_PASSWORD}
+      - KONG_PG_DATABASE=kong
+      # Écoute HTTP + HTTPS (certificat auto-signé par défaut de Kong en local ; à remplacer
+      # par un vrai certificat - Let's Encrypt ou autre - avant toute exposition publique réelle).
+      - KONG_PROXY_LISTEN=0.0.0.0:8000, 0.0.0.0:8443 ssl
+      # Plan d'administration : volontairement NON publié vers l'hôte (voir absence de "ports"
+      # ci-dessous) - seul le réseau Docker interne peut y accéder, l'Admin API de Kong n'ayant
+      # pas d'authentification native en édition Community.
+      - KONG_ADMIN_LISTEN=0.0.0.0:8001
+      - KONG_PLUGINS=bundled
+    ports:
+      - "8000:8000"
+      - "8443:8443"
+    depends_on:
+      kong-migrations:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kong-setup:
+    image: curlimages/curl:8.10.1
+    container_name: trustwedge-kong-setup
+    environment:
+      - DEPLOY_HOST=${DEPLOY_HOST:-localhost}
+    volumes:
+      - ./scripts/kong-setup.sh:/kong-setup.sh:ro
+    entrypoint: ["/bin/sh", "/kong-setup.sh"]
+    depends_on:
+      kong:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - trustwedge-network
+
+networks:
+  trustwedge-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.26.0.0/16

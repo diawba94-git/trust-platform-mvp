@@ -1,0 +1,15 @@
+{
+  "name": "trustwedge-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workspace racine pour le wallet mobile TrustWedge et ses packages partagés (services/backend, services/frontend et services/nodes restent hors workspace, buildés indépendamment par Docker).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "wallet": "npm run start --workspace=apps/wallet",
+    "build:sdk": "npm run build --workspace=packages/sdk",
+    "build:shared": "npm run build --workspace=packages/shared"
+  }
+}
