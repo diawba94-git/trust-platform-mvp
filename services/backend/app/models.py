@@ -54,18 +54,22 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     role = Column(String)
+    # Nullable le temps de la migration : les comptes déjà en base au moment de l'introduction
+    # de cette colonne n'ont pas de mot de passe et ne pourront plus se connecter tant qu'un
+    # admin ne leur en aura pas explicitement défini un (POST /admin/actors/{id}/set-password)
+    # — jamais de mot de passe généré automatiquement à leur place.
+    hashed_password = Column(String, nullable=True)
     private_key_encrypted = Column(String, nullable=True)
     public_key = Column(String, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    # Identité civile — sert de clé de rapprochement lors d'une nouvelle création de DID
-    # (cf. UserAffiliation) pour éviter qu'un même individu se retrouve avec plusieurs DID
-    # selon l'acteur qui le crée (admin, université, ...). national_id_number est nullable
-    # pour ne pas casser les comptes existants créés avant l'introduction de ces champs.
-    date_of_birth = Column(String, nullable=True)
-    place_of_birth = Column(String, nullable=True)
-    national_id_number = Column(String, unique=True, index=True, nullable=True)
+    # Clé de rapprochement lors d'une nouvelle création de DID (cf. UserAffiliation), pour
+    # éviter qu'un même individu se retrouve avec plusieurs DID selon l'acteur qui le crée
+    # (admin, université, ...). Hash déterministe (SHA-256) du n° de carte d'identité — la
+    # plateforme n'a pas besoin de conserver l'identité civile en clair pour cette seule
+    # déduplication. Nullable pour ne pas casser les comptes existants sans CNI.
+    national_id_number_hash = Column(String, unique=True, index=True, nullable=True)
 
 
 class UserAffiliation(Base):

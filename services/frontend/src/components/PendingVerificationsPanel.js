@@ -81,11 +81,11 @@ export default function PendingVerificationsPanel({ title = 'Demandes en attente
     try {
       await submitVerification({ workflow_id: selected.id, is_valid: isValid, notes });
       setDialogOpen(false);
-      // Une fois la demande acceptée, on amène directement le vérificateur sur la fiche du
+      // Une fois la demande acceptée, on amène directement le vérificateur sur l'historique du
       // document validé plutôt que de le laisser sur la liste — c'est ce document qu'il
       // vient de traiter et qu'il veut voir.
       if (isValid && documentTokenId != null) {
-        navigate(`/documents/${documentTokenId}/detail`);
+        navigate(`/documents/${documentTokenId}/history`);
       } else {
         await load();
       }

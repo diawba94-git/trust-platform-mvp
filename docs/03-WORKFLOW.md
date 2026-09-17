@@ -1,6 +1,6 @@
 # TrustWedge — Workflow métier (cycle de confiance)
 
-> Document 3/6 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 3/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 > Guide pas-à-pas écran par écran de ce même parcours : [ParcoursAlice.html](ParcoursAlice.html).
 
 ## 1. Le cycle de confiance, de bout en bout
@@ -28,20 +28,20 @@ Chaque flèche correspond à une vérification on-chain réelle (`GET /documents
 
 ## 2. Acteurs du parcours de référence
 
-| Acteur | Rôle (`UserRole`) | Compte de test | Tableau de bord |
-|---|---|---|---|
-| Alice | `USER` | `alice@trustwedge.com` | `/alice` |
-| Université | `ISSUER` | `university@trustwedge.com` | `/university` |
-| Entreprise | `VERIFIER` | `company@trustwedge.com` | `/company` |
-| Banque | `BANK` | `bank@trustwedge.com` | `/bank` |
-| Notaire | `NOTARY` | `notary@trustwedge.com` | `/state` |
-| Admin | `ADMIN` | — | gestion des titres, création d'acteurs |
+| Acteur | Rôle (`UserRole`) | Compte de test |
+|---|---|---|
+| Alice | `USER` | `mariama.ndiaye@trustwedge.com` / `test1234` |
+| Université | `ISSUER` | `ucad@universite.com` / `test1234` |
+| Entreprise | `VERIFIER` | `rh@sonatel.com` / `test1234` |
+| Banque | `BANK` | — (voir comptes de test à jour dans le [README](../README.md)) |
+| Notaire | `NOTARY` | `notaire@senegal.sn` / `test1234` |
+| Admin | `ADMIN` | `admin@trustwedge.com` / `admin123` |
 
-Mot de passe identique pour tous en démo : `test1234` (non vérifié par le MVP — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7).
+Ces comptes accèdent tous à la même **Console technique** (interface unique, menu adapté au rôle) — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §8. Le mot de passe est réellement vérifié (bcrypt) depuis le correctif de sécurité — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7 ; un compte créé par un admin doit recevoir un mot de passe explicite (`POST /admin/actors/{id}/set-password`) avant de pouvoir se connecter.
 
 ## 3. Machine à états générique des workflows
 
-Tous les types de workflow (`WorkflowType`) partagent la même machine à états (`services/backend/app/workflow_engine.py`) :
+Tous les types de workflow (`WorkflowType`) partagent la même machine à états (`services/documents/app/workflow_engine.py`, module **documents** depuis le découpage en microservices — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §4) :
 
 ```mermaid
 stateDiagram-v2
@@ -84,7 +84,7 @@ Vérification d'un diplôme par un tiers (typiquement une entreprise) auprès de
 
 ### 4.4 `LAND_TRANSFER`
 
-> Depuis l'introduction du mécanisme dédié (`transfers.py`), les transferts de titre foncier **n'utilisent plus** `validate_by_notary` du moteur générique — ils passent par le flux à triple signature décrit en [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §10.3 (`initiate` → `accept` → `notary-finalize`), plus fort cryptographiquement (signatures ECDSA vérifiées on-chain plutôt qu'un simple changement de statut applicatif).
+> Depuis l'introduction du mécanisme dédié (`services/exchange/app/routers/transfers.py`, module **exchange**), les transferts de titre foncier **n'utilisent plus** `validate_by_notary` du moteur générique — ils passent par le flux à triple signature décrit en [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §10.3 (`initiate` → `accept` → `notary-finalize`), plus fort cryptographiquement (signatures ECDSA vérifiées on-chain plutôt qu'un simple changement de statut applicatif). `exchange` appelle `documents`/`identity` en interne pour vérifier/mettre à jour l'état du document transféré (§4.2 de l'architecture).
 
 Séquence fonctionnelle complète :
 

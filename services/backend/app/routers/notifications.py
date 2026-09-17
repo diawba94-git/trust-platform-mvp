@@ -5,7 +5,7 @@ from typing import List
 from ..database import get_db
 from ..models import Notification
 from ..schemas import NotificationOut
-from ..auth import get_current_user
+from trustwedge_auth import get_current_user
 
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 

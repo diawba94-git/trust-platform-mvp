@@ -1,6 +1,6 @@
 # TrustWedge — Spécifications fonctionnelles et techniques
 
-> Document 1/6 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 1/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 
 ## 1. Contexte et objectifs
 
@@ -22,13 +22,12 @@ TrustWedge est une plateforme de **sécurisation et de vérification de document
 - Transfert de propriété d'un document transférable avec triple signature (vendeur, acheteur, notaire).
 - Partage sélectif d'un document via lien à durée de vie limitée (`DocumentShare`).
 - Parcours KYC citoyen (OTP téléphone/email, OCR carte d'identité, correspondance faciale).
-- 5 tableaux de bord web par rôle + wallet mobile (Expo/React Native).
+- Une **Console technique** web commune à tous les rôles (identité numérique, API/intégrations, journal d'activité) + les actions propres à chaque rôle, plus le wallet mobile (Expo/React Native).
 - Explorateur de blocs public (Blockscout) pour audit indépendant de la chaîne.
 - Passerelle API unique (Kong) : routage, CORS, rate limiting.
 
 ### 2.2 Explicitement hors périmètre du MVP
 
-- Vérification du mot de passe à la connexion (voir §7 Limitations).
 - Signature on-chain différenciée par utilisateur (clé de plateforme unique côté serveur pour les rôles institutionnels sans wallet propre).
 - Interopérabilité avec des registres DID externes (autre réseau que le Besu privé du projet).
 - Facturation, multi-tenant, ou séparation de données entre plusieurs déploiements clients.
@@ -36,16 +35,18 @@ TrustWedge est une plateforme de **sécurisation et de vérification de document
 
 ## 3. Acteurs et rôles
 
-| Rôle (`UserRole`) | Tableau de bord | Capacités principales | Rôle on-chain équivalent |
-|---|---|---|---|
-| `ADMIN` | `/admin` (implicite) | Crée les comptes institutionnels, gère les titres fonciers, consulte toutes les stats/workflows | — (pas de rôle contrat dédié) |
-| `ISSUER` | `/university` | Émet des documents (diplômes...) pour les utilisateurs qu'il a créés, signe on-chain avec sa propre clé | `ISSUER_ROLE` |
-| `VERIFIER` | `/company` | Vérifie des documents partagés, émet des attestations (ex. emploi) | `VERIFIER_ROLE` |
-| `BANK` | `/bank` | Même capacité de vérification que `VERIFIER` ; distinction purement applicative pour l'éligibilité aux demandes de prêt | `VERIFIER_ROLE` (partagé) |
-| `NOTARY` | `/state` | Valide les transferts de titres (triple signature), valide les workflows en attente notariale | `NOTARY_ROLE` |
-| `USER` | `/alice` | Citoyen : consulte ses documents, initie des demandes/workflows, partage des documents, passe le KYC | — |
+Tous les rôles arrivent après connexion sur la même **Console technique** (`/console` : identité numérique, API/intégrations, journal d'activité), puis accèdent depuis le menu latéral aux actions propres à leur rôle (plus de tableau de bord dédié par rôle) :
 
-> Le contrat ne connaît pas la notion de « banque » : `BANK` et `VERIFIER` partagent `VERIFIER_ROLE` on-chain (cf. `services/backend/app/models.py`, `ROLE_TO_CONTRACT_ROLE`).
+| Rôle (`UserRole`) | Capacités principales | Rôle on-chain équivalent |
+|---|---|---|
+| `ADMIN` | Crée les comptes institutionnels, gère les titres fonciers, consulte toutes les stats/workflows | — (pas de rôle contrat dédié) |
+| `ISSUER` | Émet des documents (diplômes...) pour les utilisateurs qu'il a créés, signe on-chain avec sa propre clé | `ISSUER_ROLE` |
+| `VERIFIER` | Vérifie des documents partagés, émet des attestations (ex. emploi) | `VERIFIER_ROLE` |
+| `BANK` | Même capacité de vérification que `VERIFIER` ; distinction purement applicative pour l'éligibilité aux demandes de prêt | `VERIFIER_ROLE` (partagé) |
+| `NOTARY` | Valide les transferts de titres (triple signature), valide les workflows en attente notariale | `NOTARY_ROLE` |
+| `USER` | Citoyen : consulte ses documents (groupés par type), initie des demandes/workflows, partage des documents, passe le KYC | — |
+
+> Le contrat ne connaît pas la notion de « banque » : `BANK` et `VERIFIER` partagent `VERIFIER_ROLE` on-chain (cf. `ROLE_TO_CONTRACT_ROLE`, dupliqué dans `models.py` de chaque module backend qui en a besoin — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §4).
 
 ## 4. Exigences fonctionnelles
 
@@ -110,6 +111,7 @@ Mécanisme dédié à triple signature, distinct de la validation notariale gén
 ### 4.9 Administration
 
 - `POST /admin/actors/create` : création de comptes institutionnels avec attribution du rôle on-chain correspondant.
+- `POST /admin/actors/{id}/set-password` : définit/réinitialise explicitement le mot de passe de connexion d'un acteur — jamais de valeur générée automatiquement (voir §7).
 - `POST /admin/land-titles/ocr-extract`, `POST /admin/land-titles/import` : import assisté de titres fonciers existants.
 - `GET /admin/documents`, `GET /admin/workflows` : vue d'ensemble.
 - `GET /stats/overview`, `GET /stats/activity`, `GET /network/status` : indicateurs plateforme et santé du réseau Besu.
@@ -124,7 +126,7 @@ Blockscout, exposé via Kong (`explorer.localhost`), permet à tout tiers de vé
 |---|---|---|
 | Disponibilité | Mono-instance Docker Compose | Haute disponibilité, réplication Postgres, nœuds Besu redondants |
 | Sécurité transport | HTTP local / TLS auto-signé (port 8443) | Certificat TLS valide (Let's Encrypt ou CA), HSTS |
-| Authentification | JWT, mot de passe **non vérifié** (voir §7) | Vérification de mot de passe + hash, MFA envisageable |
+| Authentification | JWT, mot de passe **réellement vérifié** (bcrypt, voir §7) | Rotation planifiée du secret JWT, MFA envisageable |
 | Autorisation | Rôles applicatifs + rôles on-chain (`AccessControl`) | Inchangé, à durcir (séparation de clé par utilisateur) |
 | Traçabilité | Historique on-chain immuable (événements + versions) | Inchangé — atout structurel de l'architecture |
 | Performance | Non benchmarké (usage démo) | Définir SLA (temps de mint, temps de vérification) |
@@ -135,7 +137,7 @@ Blockscout, exposé via Kong (`explorer.localhost`), permet à tout tiers de vé
 
 Détail colonne par colonne (tables PostgreSQL, structures on-chain, schémas API) : [09-SPECIFICATION-TECHNIQUE-DONNEES.md](09-SPECIFICATION-TECHNIQUE-DONNEES.md). Entités principales :
 
-- **User** — compte applicatif (DID, adresse, rôle, email, clé privée chiffrée le cas échéant).
+- **User** — compte applicatif (DID, adresse, rôle, email, mot de passe hashé (bcrypt), clé privée chiffrée le cas échéant). L'identité civile d'un citoyen (date/lieu de naissance, n° de CNI) n'est **jamais stockée en clair** : seul un hash déterministe du n° de CNI (`national_id_number_hash`) est conservé, uniquement pour la déduplication d'une personne déjà connue lors d'une nouvelle création de DID.
 - **Document** — miroir applicatif du NFT on-chain (token_id, type, clé métier, CID, transférabilité, attributs).
 - **Workflow** / **WorkflowStep** — instance de processus métier et son historique d'étapes.
 - **Invitation** — proposition d'un document/action entre deux utilisateurs.
@@ -147,11 +149,13 @@ Détail colonne par colonne (tables PostgreSQL, structures on-chain, schémas AP
 
 À corriger impérativement avant toute mise en production réelle (détail des actions : [04-DEPLOIEMENT-PRODUCTION.md](04-DEPLOIEMENT-PRODUCTION.md)) :
 
-1. **`POST /auth/login` ne vérifie pas le mot de passe** — retrouve l'utilisateur par email et émet un JWT valide quel que soit le mot de passe fourni (`get_password_hash`/`verify_password` existent mais ne sont jamais appelés).
-2. **Signature on-chain mutualisée** — les émissions/transferts pour les rôles sans clé propre (`VERIFIER`/`NOTARY`/`ADMIN`) sont signées avec la clé de plateforme unique (`PRIVATE_KEY`), sans séparation par utilisateur authentifié.
-3. **Secrets d'exemple en `.env`** — `JWT_SECRET`, `ADMIN_PASSWORD`, mot de passe Postgres, `PRIVATE_KEY` sont des valeurs de démo, à régénérer avant tout déploiement non local.
-4. **CORS ouvert (`allow_origins=["*"]`)** côté FastAPI — à restreindre au(x) domaine(s) réel(s) en production.
-5. **Certificat TLS auto-signé** (Kong, port 8443) — à remplacer par un certificat valide avant exposition publique.
+1. **Signature on-chain mutualisée** — les émissions/transferts pour les rôles sans clé propre (`VERIFIER`/`NOTARY`/`ADMIN`) sont signées avec la clé de plateforme unique (`PRIVATE_KEY`), sans séparation par utilisateur authentifié.
+2. **Secrets d'exemple en `.env`** — `JWT_SECRET`, `ADMIN_PASSWORD`, mot de passe Postgres, `PRIVATE_KEY` sont des valeurs de démo, à régénérer avant tout déploiement non local.
+3. **CORS ouvert (`allow_origins=["*"]`)** côté chaque service FastAPI — à restreindre au(x) domaine(s) réel(s) en production.
+4. **Certificat TLS auto-signé** (Kong, port 8443) — à remplacer par un certificat valide avant exposition publique.
+5. **Aucune interface de provisionnement du tout premier compte ADMIN** sur une base neuve (en dehors du compte bootstrapé depuis `ADMIN_EMAIL`/`ADMIN_PASSWORD` — voir [10-INITIALISATION-ENVIRONNEMENT.md](10-INITIALISATION-ENVIRONNEMENT.md) §5) : `POST /admin/actors/create` génère DID/clés/financement mais exige déjà d'être ADMIN.
+
+> `POST /auth/login` vérifie désormais réellement le mot de passe (bcrypt, module `auth` + bibliothèque partagée `packages/backend-shared/trustwedge_auth`) — un compte créé par un admin n'a cependant **aucun mot de passe initial** et reste bloqué au login jusqu'à `POST /admin/actors/{id}/set-password` (jamais de valeur générée automatiquement, sauf pour le compte `ADMIN_EMAIL` — voir ci-dessus).
 
 ## 8. Contraintes techniques (stack)
 
@@ -166,7 +170,7 @@ Voir détail complet dans [02-ARCHITECTURE.md](02-ARCHITECTURE.md) et [07-SERVIC
 - **Wallet mobile** : React Native / Expo, packages partagés (`packages/sdk`, `packages/shared`).
 - **Passerelle** : Kong (Community Edition).
 - **Explorateur** : Blockscout.
-- **Orchestration locale** : Docker Compose (11 conteneurs).
+- **Orchestration locale** : Docker Compose (18 conteneurs, dont 6 modules backend indépendants + 1 module core — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §2).
 
 ## 9. Glossaire
 

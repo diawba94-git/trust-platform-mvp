@@ -1,6 +1,6 @@
 # TrustWedge — Initialisation pour la mise en production
 
-> Document 4/6 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 4/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 > Ce document part de l'état actuel (MVP local, Docker Compose, un seul hôte) et liste ce qu'il faut faire, dans l'ordre, avant une exposition réelle (utilisateurs externes, données réelles).
 
 ## 0. État actuel vs. cible
@@ -11,7 +11,7 @@
 | Domaine | `localhost` / `*.localhost` | Nom de domaine réel + DNS |
 | TLS | Certificat auto-signé (Kong "snake oil") | Certificat valide (Let's Encrypt ou CA) |
 | Secrets | Valeurs d'exemple committées dans `.env` | Secrets régénérés, hors dépôt, gérés via un coffre-fort |
-| Authentification | Mot de passe non vérifié | Vérification de mot de passe effective |
+| Authentification | Mot de passe réellement vérifié (bcrypt), émis par le module `auth` dédié | Rotation de `JWT_SECRET` planifiée, mot de passe admin par défaut changé |
 | Signature on-chain | Clé de plateforme unique pour plusieurs rôles | À évaluer (séparation par utilisateur ou justification documentée) |
 | Sauvegardes | Aucune (volumes locaux) | Sauvegardes régulières Postgres/IPFS/données Besu |
 | Supervision | Aucune | Logs centralisés, alerting, dashboard santé réseau |
@@ -20,10 +20,10 @@
 
 Ces points sont documentés comme dette assumée du MVP dans le [README](../README.md) (§ Sécurité) et [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7. **Aucun ne doit rester ouvert avant d'exposer la plateforme à de vrais utilisateurs ou de vraies données.**
 
-- [ ] **Implémenter la vérification du mot de passe** dans `POST /auth/login` (`services/backend/app/auth.py`) — `get_password_hash`/`verify_password` existent déjà, il ne reste qu'à les brancher dans `login_user` et à s'assurer que `register_user` stocke bien le hash.
+- [x] ~~Implémenter la vérification du mot de passe~~ — fait : `POST /api/auth/login` (module `auth`, `trustwedge_auth.security`) vérifie réellement le mot de passe (bcrypt). Reste à faire avant production : **changer le mot de passe du compte admin par défaut** (`ADMIN_PASSWORD`, généré par `init-environment.js`) dès le premier accès.
 - [ ] **Décider du modèle de signature on-chain par utilisateur** : soit chaque rôle institutionnel obtient sa propre clé/wallet (cohérent avec ce qui existe déjà pour `ISSUER`, cf. `did_service.get_private_key`), soit la clé de plateforme mutualisée est documentée et son risque accepté formellement (un seul point de compromission signe pour plusieurs rôles).
 - [ ] **Régénérer tous les secrets** avant tout déploiement non local : `JWT_SECRET`, `ADMIN_PASSWORD`, mot de passe Postgres, `PRIVATE_KEY`, `ENCRYPTION_KEY`, `SECRET_KEY`, `KONG_PG_PASSWORD`, `BLOCKSCOUT_SECRET_KEY_BASE`. Les valeurs actuelles dans `.env` sont des exemples de démo, jamais destinées à un usage réel. `node scripts/init-environment.js` génère ces valeurs automatiquement pour un `.env` neuf (voir [10-INITIALISATION-ENVIRONNEMENT.md](10-INITIALISATION-ENVIRONNEMENT.md)) ; pour un environnement existant, effacer la valeur à régénérer avant de relancer le script (§6 de ce même document pour les précautions, notamment sur `ENCRYPTION_KEY`).
-- [ ] **Restreindre le CORS** côté FastAPI (`allow_origins=["*"]` dans `main.py`) au(x) domaine(s) réel(s) du frontend/wallet.
+- [ ] **Restreindre le CORS** côté FastAPI (`allow_origins=["*"]` dans le `main.py` de chacun des 7 services backend — `auth`, `identity`, `documents`, `verify`, `storage`, `exchange`, `backend`/core) au(x) domaine(s) réel(s) du frontend/wallet.
 - [ ] **Remplacer le certificat TLS auto-signé de Kong** par un certificat valide (Let's Encrypt ou CA d'entreprise) dès qu'un nom de domaine réel est disponible.
 - [ ] **Ne jamais publier l'Admin API Kong (8001) ni Kong Manager (8002)** vers l'extérieur — rester sur l'accès `docker exec` documenté.
 - [ ] **Vérifier qu'aucun fichier `.env` réel n'est commité** dans un dépôt Git partagé (le `.env` actuel du repo local contient des secrets de démo — à traiter comme sensible dès qu'il contiendra de vraies valeurs).
@@ -74,7 +74,7 @@ Le routage `explorer.localhost` repose sur la résolution native de `*.localhost
 
 ## 3. Infrastructure cible recommandée
 
-- **Hébergement** : VM(s) dédiée(s) avec suffisamment de RAM/CPU pour 11 conteneurs (4 nœuds Besu + Postgres ×2 + IPFS + backend + frontend + Blockscout ×2 + Kong ×3) ; prévoir la marge pour la croissance de la chaîne (les données Besu croissent indéfiniment).
+- **Hébergement** : VM(s) dédiée(s) avec suffisamment de RAM/CPU pour 18 conteneurs (4 nœuds Besu + Postgres ×2 + IPFS + 7 services backend [`auth`, `identity`, `documents`, `verify`, `storage`, `exchange`, `backend`/core] + frontend + Blockscout ×2 + Kong ×3) ; prévoir la marge pour la croissance de la chaîne (les données Besu croissent indéfiniment).
 - **Orchestration** : Docker Compose reste viable pour un déploiement mono-hôte maîtrisé ; envisager Kubernetes/Swarm seulement si une haute disponibilité multi-hôte ou un auto-scaling est requis (non nécessaire pour un lancement pilote).
 - **Sauvegardes** :
   - PostgreSQL applicatif (`services/postgres-data`) — dump régulier (`pg_dump`), rétention à définir selon la criticité des données (documents officiels).
@@ -108,7 +108,7 @@ Aucune valeur n'est reproduite ici (fichier sensible) — inventaire des clés �
 | `REACT_APP_API_URL`, `REACT_APP_WS_URL`, `REACT_APP_BLOCKCHAIN_RPC` | Domaine réel, en HTTPS/WSS |
 | `KONG_PG_PASSWORD` | Aléatoire, dédié à la base Kong |
 | `SECRET_KEY` | Aléatoire, dédié |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Compte admin réel — mot de passe fort, à changer dès le premier accès une fois la vérification de mot de passe implémentée (§1) |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Compte admin réel — mot de passe fort ; appliqué automatiquement au démarrage du backend (`database.py`, `run_light_migrations`) si le compte n'a pas encore de mot de passe ; à changer dès le premier accès (§1) |
 | `ENCRYPTION_KEY` | Clé de chiffrement des clés privées utilisateurs (`did_service.py`) — critique, à protéger comme `PRIVATE_KEY` |
 
 Recommandation générale : externaliser ces valeurs d'un gestionnaire de secrets (Vault, AWS/GCP Secret Manager, ou a minima un fichier `.env` chiffré hors dépôt Git) plutôt qu'un fichier `.env` en clair sur le serveur. `node scripts/init-environment.js` (voir [10-INITIALISATION-ENVIRONNEMENT.md](10-INITIALISATION-ENVIRONNEMENT.md)) peut servir de point de départ pour un premier provisionnement (génère des valeurs aléatoires cryptographiquement sûres), mais ne remplace pas un vrai coffre-fort de secrets en production.
@@ -137,16 +137,16 @@ Récapitulatif actionnable de tout ce document : à suivre dans l'ordre pour obt
 
 ## ############################################# DEMARCHE #####################
 ##   ##########################################################################
-1. **Provisionner la machine** (VM ou serveur dédié, RAM/CPU suffisants pour 11 conteneurs) et y installer Docker + Docker Compose (§3).
+1. **Provisionner la machine** (VM ou serveur dédié, RAM/CPU suffisants pour 18 conteneurs) et y installer Docker + Docker Compose (§3).
 2. **Générer l'environnement** : `node scripts/init-environment.js` — crée `.env` avec des secrets aléatoires et génère le réseau Besu QBFT (voir [10-INITIALISATION-ENVIRONNEMENT.md](10-INITIALISATION-ENVIRONNEMENT.md)).
 3. **Régler `DEPLOY_HOST`** dans `.env` sur l'IP publique/LAN ou le domaine réel de la machine (§2bis).
 4. **Réserver un nom de domaine** et le pointer vers cette IP si possible ; sinon rester en IP nue et suivre le §2bis pour Blockscout et le wallet mobile.
 5. **Démarrer la stack** : `docker compose up -d --build`.
-6. **Déployer les smart contracts** (`services/nodes` : `npm install` puis `npx hardhat run scripts/deploy.js --network besu`) — met à jour `CONTRACT_ADDRESS` dans `.env` automatiquement ; redémarrer le backend ensuite (`docker compose up -d backend`) (§2).
+6. **Déployer les smart contracts** (`services/nodes` : `npm install` puis `npx hardhat run scripts/deploy.js --network besu`) — met à jour `CONTRACT_ADDRESS` dans `.env` automatiquement ; redémarrer ensuite les modules backend qui signent/lisent on-chain (`docker compose up -d backend identity documents verify exchange`) (§2).
 7. **Appliquer la config Kong** : `docker compose up -d kong-setup` — indispensable après toute modification de `DEPLOY_HOST` (§2/§2bis).
-8. **Brancher la vérification de mot de passe** dans `POST /auth/login` (`services/backend/app/auth.py`) — bloquant (§1).
+8. **Changer le mot de passe admin par défaut** (`ADMIN_PASSWORD`) dès le premier accès — la vérification de mot de passe elle-même est déjà active (module `auth`) (§1).
 9. **Décider du modèle de signature on-chain** par utilisateur (clé propre par rôle institutionnel vs clé de plateforme mutualisée documentée) (§1).
-10. **Restreindre le CORS FastAPI** (`allow_origins=["*"]` dans `main.py`) au(x) domaine(s)/IP réel(s) (§1).
+10. **Restreindre le CORS FastAPI** (`allow_origins=["*"]` dans le `main.py` de chacun des 7 services backend) au(x) domaine(s)/IP réel(s) (§1).
 11. **Installer un certificat TLS valide** sur Kong (remplace le certificat auto-signé) dès qu'un domaine est disponible (§1/§2bis).
 12. **Si IP nue sans domaine** : ajouter les entrées `hosts` côté clients pour l'explorateur Blockscout, et régler `apps/wallet/.env.local` pour le wallet mobile (§2bis).
 13. **Vérifier qu'aucun `.env` réel n'est commité** dans un dépôt Git partagé (§1).

@@ -1,7 +1,7 @@
 # TrustWedge — Guide d'utilisation de la solution
 
-> Document 6/6 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
-> Pour un pas-à-pas illustré du parcours complet d'Alice, voir [ParcoursAlice.html](ParcoursAlice.html). Ce guide couvre en plus **chaque tableau de bord par rôle** et le **wallet mobile**.
+> Document 6/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Pour un pas-à-pas illustré du parcours complet d'Alice, voir [ParcoursAlice.html](ParcoursAlice.html). Ce guide couvre en plus la **Console technique** (interface unique, adaptée par rôle) et le **wallet mobile**.
 
 ## 1. Prise en main
 
@@ -10,72 +10,73 @@
 Voir le [README](../README.md) (§ Lancement, § Tester l'application) pour les commandes de démarrage complètes. Résumé :
 
 1. `scripts\generate-network.bat` (une seule fois) — génère le réseau blockchain.
-2. `docker compose up -d --build` — démarre les 11 conteneurs.
+2. `docker compose up -d --build` — démarre les 18 conteneurs (dont les 6 modules backend + le module core, voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §2).
 3. Déployer le contrat (Hardhat), redémarrer le backend avec l'adresse du contrat.
 4. Ouvrir `http://localhost:8000`.
 
 ### 1.2 Se connecter
 
-Page de connexion : `http://localhost:8000/login`. En mode démo, **n'importe quel mot de passe fonctionne** une fois l'email enregistré (le MVP ne vérifie pas le mot de passe — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7). Comptes de test :
+Page de connexion : `http://localhost:8000/login`. Le mot de passe est **réellement vérifié** (bcrypt, module `auth`) — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7. Comptes de test (mot de passe entre parenthèses) :
 
-| Email | Rôle | Tableau de bord |
-|---|---|---|
-| `university@trustwedge.com` | ISSUER | `/university` |
-| `alice@trustwedge.com` | USER | `/alice` |
-| `company@trustwedge.com` | VERIFIER | `/company` |
-| `bank@trustwedge.com` | VERIFIER (banque) | `/bank` |
-| `notary@trustwedge.com` | NOTARY | `/state` |
+| Email | Rôle |
+|---|---|
+| `admin@trustwedge.com` (`admin123`) | ADMIN |
+| `ucad@universite.com` (`test1234`) | ISSUER |
+| `rh@sonatel.com` (`test1234`) | VERIFIER |
+| `notaire@senegal.sn` (`test1234`) | NOTARY |
+| `mariama.ndiaye@trustwedge.com` (`test1234`) | USER |
 
-Mot de passe de convention pour la démo : `test1234`.
+Liste à jour dans le [README](../README.md) (§ Comptes de test). Un compte créé après coup par un admin (`POST /admin/actors/create`) n'a **aucun mot de passe initial** — il faut lui en définir un explicitement (`POST /admin/actors/{id}/set-password`) avant qu'il puisse se connecter.
 
-## 2. Guide par rôle
+## 2. Guide par rôle — Console technique
 
-### 2.1 Université (`/university` — Issuer)
+Tous les rôles se connectent à la **même application** (`/console`) : une coquille commune (menu latéral + zone de contenu) dont les entrées de menu varient selon le rôle connecté (`theme/roleThemes.js`), plutôt qu'un tableau de bord séparé par rôle — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §8.
 
-Écran principal : `IssuerHome`. Fonctions :
-- **Émettre un document** (`IssueDocumentForm`) : sélectionner l'étudiant (parmi les comptes que l'université a elle-même créés — restriction volontaire, une université ne peut émettre qu'à ses propres étudiants), renseigner le type de document, la référence unique, les attributs (mention, filière, année...), joindre un fichier. Le PDF final est généré automatiquement par la plateforme à partir des attributs saisis.
-- **Consulter les documents émis** (`GET /documents/issued`).
-- **Suivre les workflows** où l'université est initiatrice ou vérificatrice.
-- **Créer des comptes étudiants** si l'université dispose des droits de gestion d'acteurs (`POST /actors/create-managed-user`).
+### 2.1 Université (Issuer)
 
-### 2.2 Citoyen — Alice (`/alice` — User)
+- **Émettre un document** (`/university/issue`, `IssueDocumentPage`) : sélectionner l'étudiant (parmi les comptes que l'université a elle-même créés — restriction volontaire, une université ne peut émettre qu'à ses propres étudiants), renseigner le type de document, la référence unique, les attributs (mention, filière, année...), joindre un fichier. Le PDF final est généré automatiquement par la plateforme à partir des attributs saisis.
+- **Créer des comptes étudiants** (`/university/create-did`, `CreateManagedUserPage`) si l'université dispose des droits de gestion d'acteurs (`POST /actors/create-managed-user`).
+- **Vérifier un document** (`/university/verify`).
+- **Suivre les demandes de vérification** (`/university/requests`) où l'université est sollicitée.
 
-Écran principal : `CitizenHome`, avec les pages `citizen/RequestVerificationPage` et `citizen/SellTitlePage`. Fonctions :
-- **Consulter ses documents** (`GET /documents/my`) et leur historique de versions.
-- **Demander une vérification** à un tiers (`RequestVerificationPage`) : sélectionner le document et l'institution destinataire.
-- **Vendre/transférer un titre** (`SellTitlePage`, pour les documents transférables comme un titre foncier) : initie la première étape du transfert à triple signature (voir [03-WORKFLOW.md](03-WORKFLOW.md) §4.4).
-- **Signer une demande de transfert** (`pages/TransferSign.js`) en tant que vendeur ou acheteur.
-- **Partager un document** via un lien à durée de vie limitée, révocable à tout moment.
-- **Suivre ses notifications** en temps réel (`NotificationsPage`, WebSocket).
-- **Consulter son profil et son DID** (`pages/Profile.js`).
+### 2.2 Citoyen (User)
 
-### 2.3 Entreprise (`/company` — Verifier)
+- **Consulter tous ses documents, regroupés par type** (`/dashboard/documents/all`, `MyDocumentsPage`) et leur historique de versions.
+- **Demander une vérification** à un tiers (`/dashboard/documents`, `RequestVerificationPage`) : sélectionner le document et l'institution destinataire.
+- **Vendre/transférer un titre** (`/dashboard/sell-title`, `SellTitlePage`, pour les documents transférables comme un titre foncier) : initie la première étape du transfert à triple signature (voir [03-WORKFLOW.md](03-WORKFLOW.md) §4.4).
+- **Signer une demande de transfert** (`/transfer/:workflowId`, `TransferSign.js`) en tant que vendeur ou acheteur.
+- **Gérer les partages** (`/dashboard/shares`, `SharesPage`) via un lien à durée de vie limitée, révocable à tout moment.
+- **Vérifier un document externe** (`/dashboard/verify`).
+- **Suivre ses notifications** en temps réel (`/notifications`, WebSocket).
+- **Consulter son profil et son DID** (`/profile`).
 
-Écran principal : `VerifierHome`. Fonctions :
-- **Vérifier un document reçu** (`DocumentVerifyPanel`) : saisie du `token_id` ou scan QR (`QrScanDialog`), vérification directe sur la blockchain — fonctionne même hors ligne de l'émetteur.
-- **Consulter les demandes de vérification en attente** (`PendingVerificationsPanel`) et y répondre (valider/rejeter).
-- **Émettre une attestation d'emploi** à un candidat/employé (même formulaire d'émission que l'université, restreint à ses propres employés).
+### 2.3 Entreprise (Verifier)
 
-### 2.4 Banque (`/bank` — Bank/Verifier)
+- **Vérifier un document reçu** (`/company/verify`, `DocumentVerifyPanel`) : saisie du `token_id` ou scan QR (`QrScanDialog`), vérification directe sur la blockchain — fonctionne même hors ligne de l'émetteur.
+- **Consulter les demandes de vérification en attente** (`/company/requests`, `PendingRequestsPage`) et y répondre (valider/rejeter).
+- **Émettre une attestation d'emploi** (`/company/issue`) à un candidat/employé (même formulaire d'émission que l'université, restreint à ses propres employés).
+- **Créer des comptes employés** (`/company/create-did`).
 
-Écran principal : `BankHome`. Fonctions :
-- **Instruire une demande de prêt** : consulter le workflow `LOAN_APPLICATION` initié par le citoyen.
-- **Vérifier l'attestation d'emploi** jointe à la demande, directement sur la blockchain.
-- **Consulter les dossiers KYC** soumis par les citoyens (`GET /verification/kyc/pending`) et les valider/rejeter (`POST /verification/kyc/{id}/review`).
-- **Accorder ou refuser le prêt** en fonction du résultat de vérification.
+### 2.4 Banque (Bank/Verifier)
 
-### 2.5 Notaire (`/state` — Notary)
+- **Instruire une demande de prêt** (`/bank/loans`, `PendingRequestsPage`) : consulter le workflow `LOAN_APPLICATION` initié par le citoyen.
+- **Vérifier l'attestation d'emploi** (`/bank/verify`) jointe à la demande, directement sur la blockchain.
+- **Consulter les demandes KYC** (`/bank/kyc`, `KycReviewPage`) soumises par les citoyens et les valider/rejeter.
+- **Créer des comptes clients** (`/bank/create-did`).
 
-Écran principal : `NotaryHome`. Fonctions :
-- **Valider un transfert de titre foncier** : consulter les transferts en attente de finalisation notariale (vendeur et acheteur ont déjà signé), signer et finaliser (`POST /workflows/transfer/notary-finalize`) — cette action déclenche le transfert de propriété on-chain.
-- **Valider un workflow générique** en attente notariale (`POST /workflows/{id}/validate-by-notary`), pour les cas hors transfert de titre.
-- **Consulter l'historique des actes notariés**.
+### 2.5 Notaire (Notary)
+
+- **Valider un transfert de titre foncier** (`/state/transfers`, `StateTransfersPage`) : consulter les transferts en attente de finalisation notariale (vendeur et acheteur ont déjà signé), signer et finaliser — cette action déclenche le transfert de propriété on-chain.
+- **Signer** (`/state/signatures`).
+- **Enregistrer un titre foncier** (`/state/register`).
+- **Vérifier un document** (`/state/verify`).
+- **Consulter les vérifications KYC** (`/state/verifications`, `KycReviewPage`).
 
 ### 2.6 Admin (gestion transverse)
 
-Fonctions accessibles via les endpoints `/admin/*` (pas de tableau de bord dédié listé séparément, intégré selon le contexte de déploiement) :
-- **Créer des comptes institutionnels** (université, entreprise, banque, notaire) avec attribution du rôle on-chain correspondant.
-- **Émettre et importer des titres fonciers** (`land-titles/ocr-extract`, `land-titles/import`), y compris par OCR d'un titre existant.
+- **Créer des comptes institutionnels** (`/admin/create-actor`, université, entreprise, banque, notaire) avec attribution du rôle on-chain correspondant.
+- **Définir/réinitialiser le mot de passe d'un acteur** (`POST /admin/actors/{id}/set-password`) — obligatoire après création d'un compte, avant sa première connexion (voir §1.2).
+- **Émettre et importer des titres fonciers** (`/admin/land-titles`), y compris par OCR d'un titre existant.
 - **Vue d'ensemble** de tous les documents et workflows de la plateforme (`GET /admin/documents`, `GET /admin/workflows`).
 - **Statistiques et santé du réseau** (`GET /stats/overview`, `GET /stats/activity`, `GET /network/status`).
 
@@ -106,7 +107,7 @@ Application Expo/React Native (`apps/wallet/`) — voir [WALLET.md](WALLET.md) p
 
 | Symptôme | Piste |
 |---|---|
-| La connexion échoue | Vérifier que l'email est bien enregistré (`POST /auth/register` sinon) ; le mot de passe n'est pas vérifié en MVP, seul l'email compte |
+| La connexion échoue | Vérifier que l'email est bien enregistré et que le mot de passe est correct (réellement vérifié, bcrypt) ; un compte créé par un admin n'a pas de mot de passe tant que `POST /admin/actors/{id}/set-password` n'a pas été appelé (§1.2) |
 | `docker compose ps` montre un conteneur `besu-node-*` non `healthy` | Voir [README](../README.md) § "Points corrigés" pour les problèmes connus de génération de clés/volumes |
 | Une vérification de document échoue alors qu'il a été émis | Vérifier que le backend a bien été redémarré après le déploiement du contrat (`CONTRACT_ADDRESS` à jour dans `.env`) |
 | L'explorateur Blockscout n'affiche pas de blocs récents | Vérifier `curl http://explorer-api.localhost:8000/api/v2/blocks` et l'état des conteneurs `blockscout`/`blockscout-db` |

@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import KycVerification, KycStatus, User
 from ..schemas import KycSubmitRequest, KycOut, KycReviewRequest
-from ..auth import get_current_user
+from trustwedge_auth import get_current_user
 
 router = APIRouter(prefix="/verification/kyc", tags=["KYC"])
 

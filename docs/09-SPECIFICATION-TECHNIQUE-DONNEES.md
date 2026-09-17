@@ -1,7 +1,7 @@
 # TrustWedge — Spécification technique des données
 
-> Document 9/9 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
-> Complète [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) (spécifications fonctionnelles, résumé du modèle de données) avec le détail **colonne par colonne** du schéma PostgreSQL, la structure on-chain du contrat, et les schémas de requête/réponse de l'API. Source : `services/backend/app/models.py`, `schemas.py`, `services/nodes/contrat/DocumentRegistry.sol`.
+> Document 9/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Complète [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) (spécifications fonctionnelles, résumé du modèle de données) avec le détail **colonne par colonne** du schéma PostgreSQL, la structure on-chain du contrat, et les schémas de requête/réponse de l'API. Source : `models.py`/`schemas.py` de chaque module backend (`identity` fait référence pour `users`, `documents` pour `documents`/`workflows`, `backend`/core pour `kyc_verifications`/`notifications` — voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §4 et §5 sur la duplication contrôlée de `models.py` entre modules), `services/nodes/contrat/DocumentRegistry.sol`.
 
 ## 1. Schéma de base de données (PostgreSQL, via SQLAlchemy)
 
@@ -17,11 +17,13 @@ Créé automatiquement au démarrage du backend (`Base.metadata.create_all`) —
 | `email` | String | unique, index | Identifiant de connexion |
 | `full_name` | String | | Nom affiché |
 | `role` | String | | Valeur de `UserRole` : `ADMIN`, `ISSUER`, `VERIFIER`, `BANK`, `NOTARY`, `USER` |
+| `hashed_password` | String | nullable | Hash bcrypt (`trustwedge_auth.security`) — `null` pour un compte créé par un admin tant que `POST /admin/actors/{id}/set-password` n'a pas été appelé ; jamais de mot de passe généré automatiquement |
 | `private_key_encrypted` | String | nullable | Clé privée chiffrée (Fernet) — voir [08-SECURITE.md](08-SECURITE.md) §5.2 |
 | `public_key` | String | nullable | Clé publique en hexadécimal |
 | `created_by` | Integer | FK → `users.id`, nullable | Compte ayant créé cet utilisateur (restriction "mes comptes") |
 | `is_active` | Boolean | default `true` | Désactivation logique |
 | `created_at` | DateTime (tz) | default `now()` | |
+| `national_id_number_hash` | String | unique, index, nullable | SHA-256 (`trustwedge_auth.pii.hash_national_id`, normalisé `strip().upper()`) du n° de carte d'identité — jamais stocké en clair ; sert uniquement à la déduplication d'un même individu entre acteurs créateurs différents |
 
 ### 1.2 `documents`
 
@@ -239,8 +241,9 @@ Contrats de requête/réponse par domaine. Détail fonctionnel des endpoints cor
 |---|---|
 | `UserCreate` (requête) | `email`, `password`, `full_name`, `role="USER"`, `address` |
 | `UserOut` (réponse) | `id`, `did`, `address?`, `public_key?`, `email`, `full_name`, `role`, `is_active`, `created_at` |
-| `LoginRequest` | `email`, `password` |
+| `LoginRequest` | `email`, `password` — vérifié réellement (bcrypt), module `auth` |
 | `TokenResponse` | `access_token`, `token_type`, `user: UserOut` |
+| `SetPasswordRequest` | `new_password` (min. 8 caractères) — `POST /admin/actors/{id}/set-password`, module `identity` |
 
 ### 3.2 Documents
 
@@ -275,8 +278,8 @@ Contrats de requête/réponse par domaine. Détail fonctionnel des endpoints cor
 
 | Schéma | Champs |
 |---|---|
-| `ActorCreateRequest` | `email`, `full_name`, `role: UserRole = USER` |
-| `ActorCreateResponse` | `id`, `did`, `address`, `private_key`, `public_key`, `email`, `full_name`, `role`, `created_at` |
+| `ActorCreateRequest` | `email`, `full_name`, `first_name?`, `last_name?`, `date_of_birth?`, `place_of_birth?`, `national_id_number?` (les 3 derniers **requis** pour `role=USER`, validés par `_require_identity_fields_for_user_role`), `role: UserRole = USER` — les valeurs civiles en clair ne sont **jamais persistées** : seul `hash_national_id(national_id_number)` est stocké (`users.national_id_number_hash`), voir §1.1 |
+| `ActorCreateResponse` | `id`, `did`, `address`, `private_key?`, `public_key`, `email`, `full_name`, `date_of_birth?`, `place_of_birth?`, `national_id_number?`, `role`, `created_at`, `already_existed=false` |
 | `MyCredentialsResponse` | `id`, `did`, `address`, `private_key?`, `public_key?`, `email`, `full_name`, `role` |
 | `ManagedUserCreateRequest` | `email`, `full_name`, `role="USER"` (restreint : USER pour un ISSUER, USER/VERIFIER pour un VERIFIER — jamais un rôle hors de cet ensemble) |
 

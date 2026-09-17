@@ -70,10 +70,24 @@ class TrustWedgeTester {
   async createActor(email, fullName, role, adminToken) {
     this.log(`👤 Création de ${fullName} (${role})...`, 'info');
 
+    // Un compte USER exige une identité civile (clé de dédup — cf. ActorCreateRequest,
+    // module identity) ; les comptes institutionnels (ISSUER/VERIFIER/BANK/NOTARY) non.
+    const payload = { email, full_name: fullName, role };
+    if (role === 'USER') {
+      const [firstName, ...rest] = fullName.split(' ');
+      Object.assign(payload, {
+        first_name: firstName,
+        last_name: rest.join(' ') || firstName,
+        date_of_birth: '1990-01-01',
+        place_of_birth: 'Dakar',
+        national_id_number: `TEST-${uuidv4()}`,
+      });
+    }
+
     const response = await this.apiCall(
       'POST',
       '/admin/actors/create',
-      { email, full_name: fullName, role },
+      payload,
       adminToken
     );
 
@@ -83,6 +97,14 @@ class TrustWedgeTester {
     this.log(`   🔑 Clé privée: ${response.private_key.substring(0, 20)}...`, 'warning');
 
     return response;
+  }
+
+  async setPassword(userId, password, adminToken) {
+    // Un acteur créé par un admin (POST /admin/actors/create) n'a pas de mot de passe
+    // initial (seul son DID/sa clé privée l'identifient) — depuis le correctif
+    // d'authentification, un admin doit lui en définir un explicitement avant qu'il ne
+    // puisse se connecter par email/mot de passe (POST /auth/login).
+    await this.apiCall('POST', `/admin/actors/${userId}/set-password`, { new_password: password }, adminToken);
   }
 
   async login(email, password) {
@@ -478,14 +500,25 @@ class TrustWedgeTester {
       const ownerEmail = email('owner');
 
       // Création des acteurs (y compris le Propriétaire)
-      await this.createActor(universityEmail, 'Université de Dakar', 'ISSUER', adminToken);
-      await this.createActor(aliceEmail, 'Alice Diop', 'USER', adminToken);
-      await this.createActor(companyEmail, 'Tech Corp Sénégal', 'VERIFIER', adminToken);
-      await this.createActor(bankEmail, 'Banque Nationale', 'VERIFIER', adminToken);
-      await this.createActor(notaryEmail, 'Notaire de Dakar', 'NOTARY', adminToken);
-      await this.createActor(ownerEmail, 'Jean Ndiaye (Propriétaire)', 'USER', adminToken);
+      const university = await this.createActor(universityEmail, 'Université de Dakar', 'ISSUER', adminToken);
+      const alice = await this.createActor(aliceEmail, 'Alice Diop', 'USER', adminToken);
+      const company = await this.createActor(companyEmail, 'Tech Corp Sénégal', 'VERIFIER', adminToken);
+      const bank = await this.createActor(bankEmail, 'Banque Nationale', 'VERIFIER', adminToken);
+      const notary = await this.createActor(notaryEmail, 'Notaire de Dakar', 'NOTARY', adminToken);
+      const owner = await this.createActor(ownerEmail, 'Jean Ndiaye (Propriétaire)', 'USER', adminToken);
 
-      // Connexion de tous les acteurs (mot de passe ignoré par le MVP, voir README)
+      // Un acteur créé par un admin n'a pas de mot de passe initial (DID/clé privée
+      // seulement) — l'admin doit lui en définir un explicitement avant qu'il puisse se
+      // connecter par email/mot de passe (cf. correctif d'authentification).
+      this.log('\n🔑 Définition des mots de passe (admin)...', 'info');
+      await this.setPassword(university.id, 'password123', adminToken);
+      await this.setPassword(alice.id, 'password123', adminToken);
+      await this.setPassword(company.id, 'password123', adminToken);
+      await this.setPassword(bank.id, 'password123', adminToken);
+      await this.setPassword(notary.id, 'password123', adminToken);
+      await this.setPassword(owner.id, 'password123', adminToken);
+
+      // Connexion de tous les acteurs
       await this.login(universityEmail, 'password123');
       await this.login(aliceEmail, 'password123');
       await this.login(companyEmail, 'password123');

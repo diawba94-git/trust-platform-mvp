@@ -79,13 +79,13 @@ export default function DashboardShell({ children, pageTitle }) {
       fontFamily: "'DM Sans', Helvetica, Arial, sans-serif",
     }}>
     <Box sx={{
-      display: 'flex', width: '100%', maxWidth: CANVAS_MAX_WIDTH, alignItems: 'flex-start',
+      display: 'flex', width: '100%', maxWidth: CANVAS_MAX_WIDTH,
       boxShadow: '0 1px 3px rgba(23,26,43,0.10)',
     }}>
       <Box sx={{
         width: DRAWER_WIDTH, flexShrink: 0, bgcolor: SIDEBAR_BG, color: '#fff',
         display: 'flex', flexDirection: 'column', position: 'sticky', top: { xs: '14px', md: '28px' },
-        alignSelf: 'flex-start', borderTopLeftRadius: '14px', borderBottomLeftRadius: '14px', overflow: 'hidden',
+        alignSelf: 'stretch', borderTopLeftRadius: '14px', borderBottomLeftRadius: '14px', overflow: 'hidden',
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.3, p: '20px 16px 14px' }}>
           <Box sx={{ width: logoSize, height: logoSize, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

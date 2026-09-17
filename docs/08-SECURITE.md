@@ -1,6 +1,6 @@
 # TrustWedge — Sécurité : outils et techniques cryptographiques
 
-> Document 8/8 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 8/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 > Ce document détaille **ce qui est réellement implémenté** (outil par outil, technique par technique) ainsi que **ce qui est mocké ou volontairement absent** dans le MVP — à ne pas confondre. Le plan de correction avant mise en production est en [04-DEPLOIEMENT-PRODUCTION.md](04-DEPLOIEMENT-PRODUCTION.md) §1.
 
 ## 1. Vue d'ensemble des couches de sécurité
@@ -13,8 +13,9 @@ flowchart TD
         RL[Rate limiting — Kong 300 req/min]
     end
     subgraph L2["Couche authentification / autorisation applicative"]
-        JWT[JWT HS256 — backend]
-        BCRYPT[Hash mot de passe bcrypt — non branché]
+        JWT[JWT HS256 — module auth, vérifié par tous les modules]
+        BCRYPT[Hash mot de passe bcrypt — actif]
+        PII[Hash SHA-256 des identifiants sensibles — trustwedge_auth.pii]
         ROLE[Contrôle de rôle applicatif — UserRole]
     end
     subgraph L3["Couche identité et clés"]
@@ -36,13 +37,14 @@ La blockchain (couche 4) est conçue pour rester la **source de vérité ultime*
 
 | Élément | Implémentation | Statut |
 |---|---|---|
-| Émission de session | JWT, algorithme **HS256** (`python-jose[cryptography]`), secret `JWT_SECRET`, expiration configurable (`JWT_EXPIRATION`, en heures) | Actif |
+| Émission de session | JWT, algorithme **HS256** (`python-jose[cryptography]`), secret `JWT_SECRET`, expiration configurable (`JWT_EXPIRATION`, en heures) — émis **exclusivement** par le module `auth` (`POST /api/auth/login`) | Actif |
 | Contenu du token | `sub` (id utilisateur), `role`, `exp` | Actif |
-| Vérification du token | `get_current_user` (`auth.py`) — décodage + recherche de l'utilisateur en base à chaque requête protégée | Actif |
-| Hash de mot de passe | `passlib[bcrypt]` (`CryptContext(schemes=["bcrypt"])`), fonctions `get_password_hash`/`verify_password` **implémentées** | **Non appelées** — `register_user` ne hash et ne stocke aucun mot de passe, `login_user` retrouve l'utilisateur par email uniquement et émet un JWT valide quel que soit le mot de passe soumis |
+| Vérification du token | `get_current_user` (`packages/backend-shared/trustwedge_auth/jwt_utils.py`) — décodage + recherche de l'utilisateur en base à chaque requête protégée. Bibliothèque **partagée** : les 6 autres modules backend l'importent plutôt que de réimplémenter leur propre vérification, pour n'avoir qu'un seul système d'authentification | Actif |
+| Hash de mot de passe | `passlib[bcrypt]` (`CryptContext(schemes=["bcrypt"])`, `bcrypt==4.0.1` pinné pour compatibilité passlib), fonctions `get_password_hash`/`verify_password` (`trustwedge_auth.security`) | **Actif** — `register_user`/`POST /admin/actors/{id}/set-password` hashent et stockent le mot de passe (`hashed_password`), `login_user` le vérifie réellement avant d'émettre un JWT |
+| Identifiants nationaux (PII) | `hash_national_id` (`trustwedge_auth.pii`) — normalise (`strip().upper()`) puis SHA-256 avant stockage (`national_id_number_hash`) ; la valeur en clair n'est jamais persistée, seulement transmise en mémoire le temps de l'émission de la carte d'identité | Actif |
 | Verrouillage local (mobile) | Code PIN (`SetupPinScreen`/`LockScreen`, wallet) | Protège l'accès à l'app, indépendant du compte serveur |
 
-**Conséquence pratique** : en l'état, connaître l'email d'un compte enregistré suffit à obtenir un JWT valide pour ce compte. C'est un choix assumé de démo (cf. README, § Sécurité) — la correction est un branchement de fonctions déjà écrites, pas un développement à faire de zéro.
+**État actuel** : un JWT valide requiert désormais de connaître à la fois l'email **et** le mot de passe du compte — le correctif de sécurité qui branchait `verify_password`/`get_password_hash` (précédemment écrits mais non appelés) a été appliqué. Un compte créé après coup par un admin (`POST /admin/actors/create`) reste bloqué au login tant que `POST /admin/actors/{id}/set-password` n'a pas été appelé explicitement — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7.
 
 ## 3. Autorisation
 
@@ -62,7 +64,7 @@ Table de correspondance rôle applicatif → rôle on-chain : voir [01-SPECIFICA
 | Point d'entrée unique | Kong (`:8000` HTTP, `:8443` HTTPS) — tous les autres services (backend, frontend, IPFS, RPC Besu) sont non exposés à l'hôte, sauf le RPC de node-1 en loopback |
 | TLS | Certificat **auto-signé** ("snake oil") par défaut sur `:8443` — à remplacer par un certificat valide avant toute exposition publique réelle (voir [04-DEPLOIEMENT-PRODUCTION.md](04-DEPLOIEMENT-PRODUCTION.md) §2) |
 | CORS — niveau Kong | Plugin `cors` global, origines explicitement listées (`http://localhost:8000`, `http://explorer.localhost:8000`), méthodes/headers restreints, `credentials:true` (`scripts/kong-setup.sh`) |
-| CORS — niveau FastAPI | `allow_origins=["*"]` dans `main.py` — **plus permissif que la configuration Kong**. Sans conséquence tant que le backend n'est joignable qu'à travers Kong (seul point d'entrée), mais **incohérence à corriger** avant tout scénario où le backend serait un jour accessible autrement (ex. appel direct entre conteneurs d'un futur service tiers) |
+| CORS — niveau FastAPI | `allow_origins=["*"]` dans le `main.py` de **chacun des 7 services backend** (`auth`, `identity`, `documents`, `verify`, `storage`, `exchange`, `backend`/core) — **plus permissif que la configuration Kong**. Sans conséquence tant que ces services ne sont joignables qu'à travers Kong (seul point d'entrée) ou en réseau interne (`storage`), mais **incohérence à corriger** avant tout scénario où l'un d'eux serait un jour accessible autrement |
 | Rate limiting | Plugin `rate-limiting` Kong, 300 requêtes/minute, politique `local` (par nœud Kong — pas de compteur partagé, donc pas adapté tel quel à un Kong multi-instance) |
 | Admin API Kong | `:8001` **non publié** vers l'hôte (pas d'authentification native en édition Community) — accès restreint au réseau Docker interne uniquement |
 | RPC Besu | Seul node-1 expose son RPC à l'hôte, et uniquement en **loopback** (`127.0.0.1:8645`) — jamais en `0.0.0.0` |
@@ -130,9 +132,9 @@ Voir l'inventaire complet des variables et leur recommandation de production dan
 
 Reprise consolidée (détails et procédure : [04-DEPLOIEMENT-PRODUCTION.md](04-DEPLOIEMENT-PRODUCTION.md) §1) :
 
-1. Brancher `verify_password`/`get_password_hash` dans `login_user`/`register_user`.
+1. ~~Brancher `verify_password`/`get_password_hash` dans `login_user`/`register_user`~~ — fait (§2). Reste : changer le mot de passe admin par défaut dès le premier accès.
 2. Statuer sur la clé de signature mutualisée (`PRIVATE_KEY`) pour les rôles sans clé propre.
 3. Régénérer tous les secrets, y compris les identifiants `blockscout-db` actuellement en dur.
-4. Aligner le CORS FastAPI (`main.py`) sur la politique déjà appliquée par Kong plutôt que `allow_origins=["*"]`.
+4. Aligner le CORS FastAPI (`main.py` de chacun des 7 services) sur la politique déjà appliquée par Kong plutôt que `allow_origins=["*"]`.
 5. Remplacer le certificat TLS auto-signé de Kong.
 6. Avant toute utilisation réelle du KYC pour une décision engageante (prêt, transfert de propriété) : remplacer la correspondance faciale mockée par un service réel, et brancher un vrai canal d'envoi SMS/email (supprimer `dev_code` de la réponse HTTP).

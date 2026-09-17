@@ -15,12 +15,16 @@
  * perdu. Nécessite une confirmation explicite (--yes) — voir docs/11-RESET-DONNEES.md.
  *
  * Étapes :
- *   1. Arrête les nœuds Besu, Blockscout et le backend (Postgres/IPFS/Kong restent actifs).
+ *   1. Arrête les nœuds Besu, Blockscout et les modules backend on-chain — backend (core),
+ *      identity, documents, verify, exchange (Postgres/IPFS/Kong/auth/storage/frontend
+ *      restent actifs).
  *   2. Vide les tables applicatives en base, conserve uniquement le(s) compte(s) role=ADMIN.
  *   3. Efface les données Besu (genesis.json, clés des 4 nœuds) et Blockscout.
  *   4. Régénère le réseau Besu QBFT (scripts/generate-network.bat) et redémarre les nœuds.
  *   5. Redéploie le contrat DocumentRegistry (Hardhat) — met à jour CONTRACT_ADDRESS dans .env.
- *   6. Redémarre backend, Blockscout et blockscout-db.
+ *   6. Redémarre backend, identity, documents, verify, exchange, Blockscout et blockscout-db —
+ *      indispensable pour que les 4 derniers repartent avec la nouvelle CONTRACT_ADDRESS
+ *      (sans quoi ils continueraient de signer/lire sur l'ancien contrat, déjà éteint).
  */
 
 const fs = require("fs");
@@ -89,11 +93,15 @@ const PG_DB = env.POSTGRES_DB || "trustwedge";
 // 1. Arrêt des services concernés (Postgres/IPFS/Kong/frontend restent actifs)
 // ============================================================
 
-step("1/6 — Arrêt de Besu, Blockscout et du backend", () => {
+step("1/6 — Arrêt de Besu, Blockscout et des modules backend on-chain", () => {
   run("docker", [
     "compose",
     "stop",
     "backend",
+    "identity",
+    "documents",
+    "verify",
+    "exchange",
     "blockscout",
     "blockscout-frontend",
     "blockscout-db",
@@ -211,8 +219,8 @@ step("5/6 — Redéploiement du contrat DocumentRegistry", () => {
 // 6. Redémarrage backend + Blockscout
 // ============================================================
 
-step("6/6 — Redémarrage du backend et de Blockscout", () => {
-  run("docker", ["compose", "up", "-d", "backend"]);
+step("6/6 — Redémarrage des modules backend on-chain et de Blockscout", () => {
+  run("docker", ["compose", "up", "-d", "backend", "identity", "documents", "verify", "exchange"]);
   run("docker", ["compose", "up", "-d", "blockscout-db", "blockscout", "blockscout-frontend"]);
 });
 
@@ -220,6 +228,8 @@ console.log(`
 Réinitialisation terminée.
   - Seul le compte ADMIN a été conservé en base (mêmes email/DID qu'avant).
   - Le contrat DocumentRegistry a été redéployé (nouvelle CONTRACT_ADDRESS dans .env).
+  - backend, identity, documents, verify et exchange ont été redémarrés avec cette nouvelle
+    adresse — auth et storage n'y touchent pas, pas besoin de les redémarrer.
   - Blockscout va réindexer la nouvelle chaîne depuis le bloc 0 (quelques instants).
 
 Vérifier : docker compose ps

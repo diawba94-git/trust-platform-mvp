@@ -33,8 +33,54 @@ put "/services/frontend-app/routes/frontend-app-route" '{"paths":["/"],"strip_pa
 # Pas de nom d'hôte dédié pour l'instant (localhost nu) : en attendant le vrai domaine de
 # production, on reste sur la config d'origine. À réintroduire (host-based routing) une fois
 # le DNS en place.
+#
+# Ce service "backend" (core) est ce qui reste du monolithe d'origine après découpage :
+# /stats, /notifications, /network/status, /users, /ws — rien de tout ça n'a été réparti
+# dans les 6 modules ci-dessous. Route "catch-all" pour /api (la moins spécifique) : Kong
+# priorise déjà les routes plus longues/spécifiques enregistrées ensuite pour les modules,
+# donc pas de conflit malgré ce préfixe large.
 put "/services/backend-api" '{"url":"http://backend:8000"}'
 put "/services/backend-api/routes/backend-api-route" '{"paths":["/api"],"strip_path":true,"protocols":["http","https"]}'
+
+# --- Module auth : unique émetteur du JWT (login/mot de passe) ---
+# strip_path=false partout ci-dessous (contrairement à backend-api) : chaque module monte
+# ses routeurs publics sous un préfixe /api interne (app.include_router(..., prefix="/api")),
+# Kong lui transmet donc le chemin complet inchangé.
+put "/services/auth-api" '{"url":"http://auth:8000"}'
+put "/services/auth-api/routes/auth-api-route" '{"paths":["/api/auth"],"strip_path":false,"protocols":["http","https"]}'
+
+# --- Module identity : admin.py + actors.py + did.py ---
+put "/services/identity-api" '{"url":"http://identity:8000"}'
+put "/services/identity-api/routes/identity-admin-route" '{"paths":["/api/admin"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/identity-api/routes/identity-actors-route" '{"paths":["/api/actors"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/identity-api/routes/identity-did-route" '{"paths":["/api/did"],"strip_path":false,"protocols":["http","https"]}'
+
+# --- Module documents (écriture) : émission + cycle générique des workflows ---
+# "/api/workflows" est volontairement moins spécifique que "/api/workflows/transfer"
+# (module exchange, enregistré plus bas) : Kong sélectionne toujours le chemin le plus long
+# qui matche, donc les deux cohabitent sans conflit malgré le préfixe commun.
+put "/services/documents-api" '{"url":"http://documents:8000"}'
+put "/services/documents-api/routes/documents-write-route" '{"paths":["/api/documents/issue","/api/documents/my","/api/documents/issued","/api/documents/download"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/documents-api/routes/documents-workflows-route" '{"paths":["/api/workflows"],"strip_path":false,"protocols":["http","https"]}'
+
+# --- Module verify (lecture seule) : aucune clé de signature, lecture blockchain call() ---
+# "/api/documents/verify" (préfixe) capte /documents/verify/{id} et /documents/verify-file ;
+# les 3 routes scopées à un token_id (verify-file/versions/owner-at) partagent un token_id
+# variable en tête de chemin, non captable par un simple préfixe — d'où la route regex.
+put "/services/verify-api" '{"url":"http://verify:8000"}'
+put "/services/verify-api/routes/verify-route" '{"paths":["/api/documents/verify"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/verify-api/routes/verify-dynamic-route" '{"paths":["~/api/documents/[^/]+/(verify-file|versions|owner-at)$"],"strip_path":false,"protocols":["http","https"]}'
+
+# --- Module exchange : transfers.py + shares.py + disclosure.py ---
+# "/api/documents/verify-shared" est plus spécifique que "/api/documents/verify" (verify,
+# ci-dessus) : Kong le priorise malgré le préfixe commun, même logique que /workflows/transfer.
+put "/services/exchange-api" '{"url":"http://exchange:8000"}'
+put "/services/exchange-api/routes/exchange-transfer-route" '{"paths":["/api/workflows/transfer"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/exchange-api/routes/exchange-shares-route" '{"paths":["/api/shares"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/exchange-api/routes/exchange-verify-shared-route" '{"paths":["/api/documents/verify-shared"],"strip_path":false,"protocols":["http","https"]}'
+
+# --- Module storage : jamais exposé publiquement, réseau Docker interne uniquement ---
+# (pas de service/route Kong pour "storage" — volontaire, cf. README § Passerelle Kong)
 
 # --- Backend WebSocket : le backend attend déjà /ws/{user_id}, donc pas de strip ---
 put "/services/backend-ws" '{"url":"http://backend:8000"}'

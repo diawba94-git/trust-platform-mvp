@@ -11,12 +11,12 @@ node scripts/reset-data.js --yes
 
 La blockchain étant **immuable**, il n'existe pas de moyen de "supprimer" un document déjà émis sans repartir d'une chaîne vierge. Le script traite donc les deux couches ensemble :
 
-1. **Arrête** les nœuds Besu, Blockscout et le backend (Postgres, IPFS, Kong et le frontend restent actifs).
+1. **Arrête** les nœuds Besu, Blockscout et les modules backend on-chain — `backend` (core), `identity`, `documents`, `verify`, `exchange` (Postgres, IPFS, Kong, `auth`, `storage` et le frontend restent actifs).
 2. **Vide la base PostgreSQL** : `documents`, `workflows`, `workflow_steps`, `invitations`, `document_shares`, `kyc_verifications`, `notifications` sont entièrement vidées ; dans `users`, **seuls le(s) compte(s) avec le rôle `ADMIN` sont conservés** — tout le reste est supprimé.
 3. **Efface les données Besu** (`genesis.json`, clés des 4 nœuds) et les **données Blockscout** (base d'indexation).
 4. **Régénère un réseau Besu QBFT neuf** (`scripts/generate-network.bat`) et redémarre les 4 nœuds.
 5. **Redéploie le contrat `DocumentRegistry`** (Hardhat) — la nouvelle `CONTRACT_ADDRESS` est écrite automatiquement dans `.env` par `scripts/deploy.js`.
-6. **Redémarre** le backend et Blockscout (qui réindexe la nouvelle chaîne depuis le bloc 0).
+6. **Redémarre** `backend`, `identity`, `documents`, `verify`, `exchange` et Blockscout (qui réindexe la nouvelle chaîne depuis le bloc 0) — les 5 modules backend repartent avec la nouvelle `CONTRACT_ADDRESS` ; `auth` et `storage` n'interagissent pas avec le contrat et n'ont donc pas besoin d'être redémarrés (voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §4).
 
 **IPFS et Kong ne sont pas touchés** — les anciens fichiers PDF restent stockés sur IPFS (orphelins, sans conséquence) mais ne sont plus référencés par aucun document.
 
@@ -43,8 +43,8 @@ Durée typique : quelques minutes (régénération du réseau + attente que `bes
 
 ### Après exécution
 
-- Se reconnecter avec le compte admin (même email qu'avant — voir `.env`, `ADMIN_EMAIL`).
-- Les comptes de démo (université, entreprise, banque, notaire, citoyens...) doivent être **recréés** (`POST /admin/actors/create` ou `POST /auth/register`) — voir [06-GUIDE-UTILISATION.md](06-GUIDE-UTILISATION.md).
+- Se reconnecter avec le compte admin (même email qu'avant — voir `.env`, `ADMIN_EMAIL`) ; son mot de passe (`ADMIN_PASSWORD`) est réappliqué automatiquement au redémarrage du backend s'il n'en a pas déjà un (`database.py`, `run_light_migrations`).
+- Les comptes de démo (université, entreprise, banque, notaire, citoyens...) doivent être **recréés** (`POST /admin/actors/create` ou `POST /auth/register`) — voir [06-GUIDE-UTILISATION.md](06-GUIDE-UTILISATION.md). Un compte recréé par l'admin n'a **aucun mot de passe initial** : il faut lui en définir un explicitement (`POST /admin/actors/{id}/set-password`) avant qu'il puisse se connecter — voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7.
 - Vérifier l'état : `docker compose ps`, `curl http://localhost:8000/api/health`.
 - Blockscout peut mettre quelques instants à rattraper l'indexation de la nouvelle chaîne après son redémarrage.
 

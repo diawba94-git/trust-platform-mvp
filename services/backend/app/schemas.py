@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, model_validator
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -161,6 +161,12 @@ class ActorCreateResponse(BaseModel):
         from_attributes = True
 
 
+class SetPasswordRequest(BaseModel):
+    """Définit/réinitialise explicitement le mot de passe de connexion d'un acteur — jamais
+    généré automatiquement (voir POST /admin/actors/{id}/set-password)."""
+    new_password: str = Field(min_length=8)
+
+
 class MyCredentialsResponse(BaseModel):
     id: int
     did: str
@@ -248,68 +254,6 @@ class InvitationResponse(BaseModel):
 
 
 # ============================================================
-# Vérification d'identité (KYC) — wallet mobile, onboarding SSI
-# Téléphone/email : logique de vérification réelle (JWT à expiration), mais l'envoi
-# (SMS/email) est mocké — cf. services/verification_service.py. OCR carte d'identité : réel
-# (Tesseract, déjà utilisé pour les titres fonciers). Reconnaissance faciale : mockée
-# (cf. services/face_match_service.py) — aucune dépendance de reconnaissance faciale installée.
-# ============================================================
-class PhoneSendRequest(BaseModel):
-    phone: str
-
-
-class PhoneSendResponse(BaseModel):
-    token: str
-    # Uniquement parce que l'envoi SMS est mocké (pas de Twilio branché) : en conditions
-    # réelles, le code ne doit JAMAIS transiter par cette réponse HTTP, seul le SMS le porte.
-    dev_code: Optional[str] = None
-
-
-class PhoneVerifyRequest(BaseModel):
-    token: str
-    code: str
-
-
-class VerificationResult(BaseModel):
-    verified: bool
-
-
-class EmailSendRequest(BaseModel):
-    email: EmailStr
-
-
-class EmailSendResponse(BaseModel):
-    token: str
-
-
-class EmailVerifyRequest(BaseModel):
-    token: str
-
-
-class IdCardExtractRequest(BaseModel):
-    image_base64: str
-
-
-class IdCardExtractResponse(BaseModel):
-    nom: str
-    prenom: str
-    date_naissance: str
-    num_cni: str
-    nationalite: str
-
-
-class FaceCompareRequest(BaseModel):
-    card_image_base64: str
-    selfie_image_base64: str
-
-
-class FaceCompareResponse(BaseModel):
-    matched: bool
-    similarity: float
-    mocked: bool = True
-
-
-# ============================================================
 # Partage de document par lien (wallet mobile — écran "Partages")
 # ============================================================
 class ShareCreateRequest(BaseModel):
@@ -388,6 +332,68 @@ class ManagedUserCreateRequest(BaseModel):
                 "date_of_birth, place_of_birth et national_id_number sont requis pour créer un compte USER"
             )
         return self
+
+
+# ============================================================
+# Vérification d'identité (KYC) — wallet mobile, onboarding SSI
+# Téléphone/email : logique de vérification réelle (JWT à expiration), mais l'envoi
+# (SMS/email) est mocké — cf. services/verification_service.py. OCR carte d'identité : réel
+# (Tesseract, déjà utilisé pour les titres fonciers). Reconnaissance faciale : mockée
+# (cf. services/face_match_service.py) — aucune dépendance de reconnaissance faciale installée.
+# ============================================================
+class PhoneSendRequest(BaseModel):
+    phone: str
+
+
+class PhoneSendResponse(BaseModel):
+    token: str
+    # Uniquement parce que l'envoi SMS est mocké (pas de Twilio branché) : en conditions
+    # réelles, le code ne doit JAMAIS transiter par cette réponse HTTP, seul le SMS le porte.
+    dev_code: Optional[str] = None
+
+
+class PhoneVerifyRequest(BaseModel):
+    token: str
+    code: str
+
+
+class VerificationResult(BaseModel):
+    verified: bool
+
+
+class EmailSendRequest(BaseModel):
+    email: EmailStr
+
+
+class EmailSendResponse(BaseModel):
+    token: str
+
+
+class EmailVerifyRequest(BaseModel):
+    token: str
+
+
+class IdCardExtractRequest(BaseModel):
+    image_base64: str
+
+
+class IdCardExtractResponse(BaseModel):
+    nom: str
+    prenom: str
+    date_naissance: str
+    num_cni: str
+    nationalite: str
+
+
+class FaceCompareRequest(BaseModel):
+    card_image_base64: str
+    selfie_image_base64: str
+
+
+class FaceCompareResponse(BaseModel):
+    matched: bool
+    similarity: float
+    mocked: bool = True
 
 
 class KycSubmitRequest(BaseModel):

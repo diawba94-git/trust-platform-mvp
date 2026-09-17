@@ -1,0 +1,19 @@
+[project]
+name = "trustwedge-auth"
+version = "0.1.0"
+description = "Bibliotheque d'authentification partagee par les modules backend TrustWedge (hash de mot de passe, hash de CNI, emission/verification JWT)."
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0,<3.0",
+    "passlib[bcrypt]==1.7.4",
+    "bcrypt==4.0.1",
+    "python-jose[cryptography]==3.3.0",
+    "fastapi>=0.104,<0.105",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["trustwedge_auth*"]

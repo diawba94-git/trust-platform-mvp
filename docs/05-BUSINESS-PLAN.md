@@ -1,6 +1,6 @@
 # TrustWedge — Business plan (support de présentation)
 
-> Document 5/6 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 5/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 >
 > **Note méthodologique** : ce document structure l'argumentaire à partir de ce que la plateforme fait réellement aujourd'hui (voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) et [02-ARCHITECTURE.md](02-ARCHITECTURE.md)). Les champs marqués **[À compléter]** appellent des données que seul le porteur de projet peut fournir (chiffrage marché, hypothèses financières, équipe, calendrier de levée) — ils ne doivent pas être remplis par des estimations inventées avant présentation à des tiers (investisseurs, partenaires institutionnels).
 

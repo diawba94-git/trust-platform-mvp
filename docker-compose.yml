@@ -206,26 +206,209 @@ services:
     env_file:
       - .env
 
+  # ==========================================
+  # BACKEND CORE (ex-monolithe) — /stats, /notifications, /network/status, /users, /ws,
+  # et /internal/notify + /internal/push (bus WebSocket temps réel, appelé en HTTP interne
+  # par documents/exchange). Tout le reste a été réparti dans les 6 modules ci-dessous.
+  # ==========================================
   backend:
-    build: ./services/backend
+    build:
+      context: .
+      dockerfile: services/backend/Dockerfile
     container_name: trustwedge-backend
     expose:
       - "8000"
     environment:
       - DATABASE_URL=${DATABASE_URL}
-      - IPFS_API_URL=${IPFS_API_URL}
-      - IPFS_GATEWAY_URL=${IPFS_GATEWAY_URL}
       - BESU_RPC_URL=${BESU_RPC_URL}
       - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
       - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
       - NODE_ENV=${NODE_ENV}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ADMIN_EMAIL=${ADMIN_EMAIL}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     volumes:
       - ./services/backend/app:/app/app
     depends_on:
       - postgres
-      - ipfs
       - besu-node-1
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE AUTH — unique propriétaire du hachage de mot de passe et de l'émission du JWT.
+  # ==========================================
+  auth:
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+    container_name: trustwedge-auth-svc
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE IDENTITY — admin.py + actors.py + did.py : génération de DID, gestion des
+  # acteurs. Appelle documents (HTTP interne) pour l'émission auto de la pièce d'identité.
+  # ==========================================
+  identity:
+    build:
+      context: .
+      dockerfile: services/identity/Dockerfile
+    container_name: trustwedge-identity
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - BESU_RPC_URL=${BESU_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DOCUMENTS_SERVICE_URL=http://documents:8000
+      - STORAGE_SERVICE_URL=http://storage:8000
+    depends_on:
+      - postgres
+      - besu-node-1
+      - documents
+      - storage
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE STORAGE — wrapper interne IPFS, jamais exposé par Kong.
+  # ==========================================
+  storage:
+    build:
+      context: .
+      dockerfile: services/storage/Dockerfile
+    container_name: trustwedge-storage
+    expose:
+      - "8000"
+    environment:
+      - IPFS_API_URL=${IPFS_API_URL}
+    depends_on:
+      - ipfs
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE DOCUMENTS (écriture) — émission de documents + cycle générique des workflows.
+  # Appelle identity (résolution de nom) et storage (IPFS) en HTTP interne.
+  # ==========================================
+  documents:
+    build:
+      context: .
+      dockerfile: services/documents/Dockerfile
+    container_name: trustwedge-documents
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - BESU_RPC_URL=${BESU_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - PRIVATE_KEY=${PRIVATE_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - IDENTITY_SERVICE_URL=http://identity:8000
+      - STORAGE_SERVICE_URL=http://storage:8000
+      - CORE_SERVICE_URL=http://backend:8000
+    depends_on:
+      - postgres
+      - besu-node-1
+      - storage
+      - backend
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE VERIFY (lecture seule) — aucune clé de signature, lecture blockchain call().
+  # ==========================================
+  verify:
+    build:
+      context: .
+      dockerfile: services/verify/Dockerfile
+    container_name: trustwedge-verify
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - BESU_RPC_URL=${BESU_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - IDENTITY_SERVICE_URL=http://identity:8000
+      - STORAGE_SERVICE_URL=http://storage:8000
+    depends_on:
+      - postgres
+      - besu-node-1
+      - storage
+      - identity
+    restart: unless-stopped
+    networks:
+      - trustwedge-network
+    env_file:
+      - .env
+
+  # ==========================================
+  # MODULE EXCHANGE — transfers.py + shares.py + disclosure.py. Appelle documents (HTTP
+  # interne) pour lire/mettre à jour le statut d'un document avant transfert/partage.
+  # ==========================================
+  exchange:
+    build:
+      context: .
+      dockerfile: services/exchange/Dockerfile
+    container_name: trustwedge-exchange
+    expose:
+      - "8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_ALGORITHM=${JWT_ALGORITHM}
+      - JWT_EXPIRATION=${JWT_EXPIRATION}
+      - BESU_RPC_URL=${BESU_RPC_URL}
+      - CONTRACT_ADDRESS=${CONTRACT_ADDRESS}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - DOCUMENTS_SERVICE_URL=http://documents:8000
+      - IDENTITY_SERVICE_URL=http://identity:8000
+      - STORAGE_SERVICE_URL=http://storage:8000
+      - CORE_SERVICE_URL=http://backend:8000
+    depends_on:
+      - postgres
+      - besu-node-1
+      - documents
+      - identity
+      - storage
+      - backend
     restart: unless-stopped
     networks:
       - trustwedge-network

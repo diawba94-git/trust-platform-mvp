@@ -50,11 +50,12 @@ contrat n'exige pas que `owner` corresponde à un compte préexistant — mais n
 on-chain particulier (ISSUER/VERIFIER/NOTARY) : il peut seulement posséder et vérifier, pas
 émettre. C'est cohérent avec un acheteur/particulier, pas un émetteur institutionnel.
 
-⚠️ Limite héritée du backend, pas introduite par le wallet : `POST /auth/login` ne vérifie
-actuellement pas le mot de passe (`auth.py::login_user`, commentaire "pas de mot de passe
-dans la base pour le MVP" — le modèle `User` n'a même pas de colonne pour ça). Le mot de
-passe demandé par `RegisterScreen` est donc, pour l'instant, décoratif — à corriger côté
-backend avant toute mise en production, indépendamment du wallet.
+`POST /auth/login` (module `auth`, bibliothèque partagée `packages/backend-shared/trustwedge_auth`)
+vérifie réellement le mot de passe (bcrypt) — corrigé depuis, ce n'était pas le cas au moment
+de la rédaction initiale de cette note. Un compte créé par un admin (`registerNewAccount`
+mis à part, qui définit son propre mot de passe) n'a pas de mot de passe initial : voir
+[01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7 pour le mécanisme de déblocage
+(`POST /admin/actors/{id}/set-password`).
 
 ### 2. Vérification : toujours en direct, jamais depuis le QR
 

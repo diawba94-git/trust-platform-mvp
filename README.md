@@ -61,17 +61,21 @@ Le frontend, l'API, l'IPFS gateway et l'explorateur Blockscout passent désormai
 
 ## Comptes de test
 
-Comptes déjà enregistrés en base (mot de passe identique pour tous : `test1234`) — un compte par rôle/tableau de bord :
+Comptes déjà enregistrés en base — tous les rôles arrivent après connexion sur la même **Console technique** (`/console` : identité numérique, API/intégrations, journal d'activité), puis accèdent depuis le menu latéral aux actions propres à leur rôle :
 
-| Email | Mot de passe | Rôle | Tableau de bord |
+| Email | Mot de passe | Rôle | Actions principales |
 |---|---|---|---|
-| `university@trustwedge.com` | `test1234` | ISSUER | `/university` — émission de diplômes |
-| `alice@trustwedge.com` | `test1234` | USER | `/alice` — espace citoyen, documents & demandes |
-| `company@trustwedge.com` | `test1234` | VERIFIER | `/company` — vérification côté entreprise |
-| `bank@trustwedge.com` | `test1234` | VERIFIER | `/bank` — vérification pour un dossier de prêt |
-| `notary@trustwedge.com` | `test1234` | NOTARY | `/state` — validation notariale des transferts |
+| `admin@trustwedge.com` | `admin123` | ADMIN | Créer un acteur, titres fonciers |
+| `ucad@universite.com` | `test1234` | ISSUER | Émettre un diplôme, établir un DID étudiant |
+| `rh@sonatel.com` | `test1234` | VERIFIER | Attestation employeur, vérifier un document |
+| `notaire@senegal.sn` | `test1234` | NOTARY | Enregistrer un titre, transferts, signatures notariales |
+| `mariama.ndiaye@trustwedge.com` | `test1234` | USER | Documents détenus, partages, mise en vente d'un titre |
 
-> Le MVP ne vérifie pas le mot de passe à la connexion (`login_user` ne fait que retrouver l'utilisateur par email, voir section Sécurité) : n'importe quel mot de passe fonctionne une fois l'email enregistré. `test1234` est indiqué pour la cohérence de la démo.
+> Aucun compte `BANK` n'est encore enregistré dans cet environnement — à créer via `admin@trustwedge.com` → menu "Créer un acteur" (`/admin/create-actor`).
+
+> `POST /auth/login` vérifie réellement le mot de passe (bcrypt) — **le mot de passe compte**, ce n'est plus un MVP qui accepte n'importe quoi. Un compte créé par un admin (`/admin/actors/create` ou "Établir DID") n'a **aucun mot de passe initial** : il reste bloqué au login tant qu'un admin ne lui en a pas explicitement défini un via `POST /admin/actors/{id}/set-password` — jamais de valeur générée automatiquement. C'est ce qui a été fait pour les 5 comptes ci-dessus.
+>
+> Ces comptes sont propres à cet environnement (créés manuellement, pas par un script de seed versionné) — sur une base neuve, cette liste sera vide et il n'existe aujourd'hui aucune interface ni script pour provisionner le tout premier compte ADMIN (`POST /admin/actors/create`, qui génère DID/clés/financement, exige déjà d'être ADMIN). Le compte `admin@trustwedge.com` de cet environnement, lui, a été amorcé automatiquement depuis `ADMIN_EMAIL`/`ADMIN_PASSWORD` (`.env`) au premier démarrage après ce correctif — voir `database.py`.
 
 Pour créer un nouveau compte : `POST /auth/register` (voir étape 4 ci-dessous).
 
@@ -83,11 +87,11 @@ Pour créer un nouveau compte : `POST /auth/register` (voir étape 4 ci-dessous)
 
 ```bash
 node scripts/init-environment.js             # génère .env + les clés/genesis.json (une seule fois)
-docker compose up -d --build                 # démarre les 11 conteneurs
+docker compose up -d --build                 # démarre les 18 conteneurs (6 modules backend + core)
 cd services\nodes && npm install             # dépendances Hardhat (une seule fois)
 npx hardhat run scripts/deploy.js --network besu   # déploie le contrat, met à jour CONTRACT_ADDRESS dans .env
 cd ..\..
-docker compose up -d backend                 # redémarre le backend avec la nouvelle CONTRACT_ADDRESS
+docker compose up -d backend identity documents verify exchange   # redémarre les modules backend avec la nouvelle CONTRACT_ADDRESS
 ```
 
 ### 2. Vérifier que tout tourne
@@ -103,7 +107,7 @@ curl http://explorer-api.localhost:8000/api/v2/blocks   # Blockscout doit renvoy
 
 ### 3. Interface web
 
-Ouvrir http://localhost:8000, `/login` (n'importe quel email/mot de passe déjà enregistré), puis `/university`, `/alice`, `/company`, `/bank`, `/state`.
+Ouvrir http://localhost:8000, `/login` (un des comptes de test ci-dessus, avec son vrai mot de passe) — tous les rôles atterrissent ensuite sur `/console` (Console technique), avec leurs actions propres accessibles depuis le menu latéral.
 Swagger de l'API : http://localhost:8000/api/docs
 Explorateur de blocs Blockscout : http://explorer.localhost:8000 (blocs, transactions, comptes du réseau Besu QBFT)
 
@@ -114,7 +118,7 @@ Utilise les comptes de test ci-dessus (déjà enregistrés) :
 ```bash
 # Connexion (université, ISSUER) -> récupérer access_token
 curl -X POST http://localhost:8000/api/auth/login -H "Content-Type: application/json" \
-  -d '{"email":"university@trustwedge.com","password":"test1234"}'
+  -d '{"email":"ucad@universite.com","password":"test1234"}'
 
 # Émission d'un document pour Alice (mint on-chain + upload IPFS + enregistrement DB)
 curl -X POST http://localhost:8000/api/documents/issue -H "Content-Type: application/json" \
@@ -142,5 +146,5 @@ docker compose down -v       # supprime aussi les volumes nommés (pas les bind 
 ## Sécurité
 
 - Le fichier `.env` contient des secrets d'exemple (`JWT_SECRET`, `ADMIN_PASSWORD`, mot de passe Postgres, `PRIVATE_KEY`). À changer avant tout déploiement autre que local/dev.
-- `POST /auth/login` (`backend/app/auth.py`) ne vérifie **pas** le mot de passe : il retrouve l'utilisateur par email et émet un token JWT valide quel que soit le mot de passe fourni. `register_user` ne stocke d'ailleurs aucun hash de mot de passe (`get_password_hash`/`verify_password` existent mais ne sont appelés nulle part). À corriger avant tout usage réel.
+- `POST /auth/login` (module `auth`, bibliothèque partagée `packages/backend-shared/trustwedge_auth`) vérifie réellement le mot de passe (bcrypt) — corrigé, ce n'est plus vrai depuis. Un compte créé par un admin (DID/clés provisionnés, pas de mot de passe collecté à la création) reste bloqué au login jusqu'à `POST /admin/actors/{id}/set-password` — jamais de valeur générée automatiquement, voir "Comptes de test" ci-dessus.
 - Toutes les émissions/transferts on-chain (`BlockchainClient`) sont signés avec la même clé (`PRIVATE_KEY` dans `.env`), quel que soit l'utilisateur authentifié qui appelle l'API — il n'y a pas de séparation de clé par utilisateur.

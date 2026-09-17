@@ -1,6 +1,6 @@
 # TrustWedge — Script d'initialisation de l'environnement
 
-> Document 10/10 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
+> Document 10/11 de la documentation projet. Voir [docs/README.md](README.md) pour l'index complet.
 > Décrit `scripts/init-environment.js`, qui automatise la première étape du [README](../README.md) (§ Lancement) : générer un `.env` exploitable et le réseau blockchain, avant `docker compose up`.
 
 ## 1. Ce que fait le script
@@ -56,7 +56,7 @@ cd services/nodes && npm install
 npx hardhat run scripts/deploy.js --network besu
 cd ../..
 # reporter l'adresse affichée dans CONTRACT_ADDRESS (.env)
-docker compose up -d backend
+docker compose up -d backend identity documents verify exchange
 ```
 
 Ouvrir ensuite `http://localhost:8000` (voir [06-GUIDE-UTILISATION.md](06-GUIDE-UTILISATION.md)).
@@ -73,7 +73,7 @@ Select-String ADMIN_PASSWORD .env
 grep ADMIN_PASSWORD .env
 ```
 
-> Rappel (voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7) : dans l'état actuel du MVP, `POST /auth/login` ne vérifie pas le mot de passe — `ADMIN_PASSWORD` n'est donc pas encore utilisé pour se connecter, mais est généré dès maintenant pour être prêt le jour où la vérification sera branchée (voir [04-DEPLOIEMENT-PRODUCTION.md](04-DEPLOIEMENT-PRODUCTION.md) §1).
+> `POST /auth/login` vérifie réellement le mot de passe (bcrypt) — `ADMIN_PASSWORD` est utilisé pour se connecter avec `ADMIN_EMAIL`. Au premier démarrage du backend après ce correctif, si le compte `ADMIN_EMAIL` existe déjà en base sans mot de passe, `ADMIN_PASSWORD` lui est appliqué automatiquement (`database.py`, `run_light_migrations`) — c'est le seul compte à bénéficier de cette activation automatique ; tout autre compte créé par un admin reste bloqué au login jusqu'à `POST /admin/actors/{id}/set-password` (voir [01-SPECIFICATIONS.md](01-SPECIFICATIONS.md) §7).
 
 ## 6. Réexécution et rotation de secrets
 

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 const client = axios.create({ baseURL: API_URL });
 
@@ -152,28 +152,17 @@ export function verifyDocumentFile(tokenId, file) {
   );
 }
 
-// ADMIN uniquement : liste tous les documents enregistrés (pour retrouver un Token ID).
-export function getAllDocuments() {
-  return unwrap(client.get('/admin/documents'));
-}
-
-// Documents émis par l'utilisateur courant (ADMIN/NOTARY voient tout le registre) —
-// alimente les widgets "récemment émis" des tableaux de bord Université/Entreprise/État.
-export function getIssuedDocuments(docType) {
-  return unwrap(client.get('/documents/issued', { params: docType ? { doc_type: docType } : {} }));
-}
-
-// Statistiques agrégées du tableau de bord — la forme de la réponse dépend du rôle appelant.
+// Statistiques agrégées (documents émis/vérifiés).
 export function getStatsOverview() {
   return unwrap(client.get('/stats/overview'));
 }
 
-// ADMIN uniquement : fil d'activité récente, tous rôles confondus.
+// Fil d'activité récente, scopé au rôle de l'appelant.
 export function getRecentActivity(limit) {
   return unwrap(client.get('/stats/activity', { params: limit ? { limit } : {} }));
 }
 
-// ADMIN uniquement : statut du réseau blockchain (bloc courant, connexion).
+// Statut du réseau blockchain (bloc courant, connexion) — Console technique.
 export function getNetworkStatus() {
   return unwrap(client.get('/network/status'));
 }
@@ -253,11 +242,6 @@ export function markAllNotificationsAsRead() {
 
 export function deleteAllNotifications() {
   return unwrap(client.delete('/notifications'));
-}
-
-// ADMIN uniquement : vue globale de tous les workflows (toutes parties confondues).
-export function getAllWorkflows(type) {
-  return unwrap(client.get('/admin/workflows', { params: type ? { type } : {} }));
 }
 
 // ISSUER (étudiant) ou VERIFIER (employé) uniquement : crée un compte USER et son DID (ou
