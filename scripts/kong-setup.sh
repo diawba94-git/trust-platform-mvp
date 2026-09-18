@@ -65,10 +65,11 @@ put "/services/documents-api/routes/documents-workflows-route" '{"paths":["/api/
 
 # --- Module verify (lecture seule) : aucune clé de signature, lecture blockchain call() ---
 # "/api/documents/verify" (préfixe) capte /documents/verify/{id} et /documents/verify-file ;
+# "/api/documents/by-reference" (recherche par doc_type+doc_key) ajouté à ce même préfixe ;
 # les 3 routes scopées à un token_id (verify-file/versions/owner-at) partagent un token_id
 # variable en tête de chemin, non captable par un simple préfixe — d'où la route regex.
 put "/services/verify-api" '{"url":"http://verify:8000"}'
-put "/services/verify-api/routes/verify-route" '{"paths":["/api/documents/verify"],"strip_path":false,"protocols":["http","https"]}'
+put "/services/verify-api/routes/verify-route" '{"paths":["/api/documents/verify","/api/documents/by-reference"],"strip_path":false,"protocols":["http","https"]}'
 put "/services/verify-api/routes/verify-dynamic-route" '{"paths":["~/api/documents/[^/]+/(verify-file|versions|owner-at)$"],"strip_path":false,"protocols":["http","https"]}'
 
 # --- Module exchange : transfers.py + shares.py + disclosure.py ---

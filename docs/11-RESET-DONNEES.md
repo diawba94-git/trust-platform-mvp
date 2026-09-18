@@ -12,11 +12,12 @@ node scripts/reset-data.js --yes
 La blockchain étant **immuable**, il n'existe pas de moyen de "supprimer" un document déjà émis sans repartir d'une chaîne vierge. Le script traite donc les deux couches ensemble :
 
 1. **Arrête** les nœuds Besu, Blockscout et les modules backend on-chain — `backend` (core), `identity`, `documents`, `verify`, `exchange` (Postgres, IPFS, Kong, `auth`, `storage` et le frontend restent actifs).
-2. **Vide la base PostgreSQL** : `documents`, `workflows`, `workflow_steps`, `invitations`, `document_shares`, `kyc_verifications`, `notifications` sont entièrement vidées ; dans `users`, **seuls le(s) compte(s) avec le rôle `ADMIN` sont conservés** — tout le reste est supprimé.
+2. **Vide la base PostgreSQL** : `documents`, `workflows`, `workflow_steps`, `invitations`, `document_shares`, `kyc_verifications`, `notifications`, `user_affiliations` sont entièrement vidées ; dans `users`, **seuls le(s) compte(s) avec le rôle `ADMIN` sont conservés** — tout le reste est supprimé. `user_affiliations` (rattachement d'une personne déjà identifiée à un autre acteur — voir [09-SPECIFICATION-TECHNIQUE-DONNEES.md](09-SPECIFICATION-TECHNIQUE-DONNEES.md) §1.1bis) doit être vidée **avant** `users` : elle référence `users.id` par clé étrangère, sinon `DELETE FROM users` échoue (`violates foreign key constraint`).
 3. **Efface les données Besu** (`genesis.json`, clés des 4 nœuds) et les **données Blockscout** (base d'indexation).
 4. **Régénère un réseau Besu QBFT neuf** (`scripts/generate-network.bat`) et redémarre les 4 nœuds.
 5. **Redéploie le contrat `DocumentRegistry`** (Hardhat) — la nouvelle `CONTRACT_ADDRESS` est écrite automatiquement dans `.env` par `scripts/deploy.js`.
 6. **Redémarre** `backend`, `identity`, `documents`, `verify`, `exchange` et Blockscout (qui réindexe la nouvelle chaîne depuis le bloc 0) — les 5 modules backend repartent avec la nouvelle `CONTRACT_ADDRESS` ; `auth` et `storage` n'interagissent pas avec le contrat et n'ont donc pas besoin d'être redémarrés (voir [02-ARCHITECTURE.md](02-ARCHITECTURE.md) §4).
+7. **(optionnel, `--clean-disk`)** Supprime `node_modules/` (racine, `services/frontend`, `services/nodes`) et les artefacts Hardhat (`services/nodes/artifacts`, `cache`) — voir §4bis.
 
 **IPFS et Kong ne sont pas touchés** — les anciens fichiers PDF restent stockés sur IPFS (orphelins, sans conséquence) mais ne sont plus référencés par aucun document.
 
@@ -41,6 +42,18 @@ Sans `--yes`, le script affiche uniquement le résumé de ce qu'il va faire puis
 
 Durée typique : quelques minutes (régénération du réseau + attente que `besu-node-1` soit sain + redéploiement du contrat).
 
+## 4bis. Libérer de l'espace disque (`--clean-disk`)
+
+```bash
+node scripts/reset-data.js --yes --clean-disk
+```
+
+Le plus gros de l'espace disque du dépôt (souvent plus d'1 Go) vient de fichiers **régénérables**, jamais versionnés (`.gitignore`) : `node_modules/` à la racine, dans `services/frontend` et dans `services/nodes`, plus les artefacts de compilation Hardhat (`services/nodes/artifacts`, `services/nodes/cache`). Aucun n'est nécessaire pour `docker compose up` :
+- le frontend est buildé **dans son image Docker** (pas de bind-mount de `node_modules` depuis l'hôte, voir `docker-compose.yml`) ;
+- `services/nodes` réinstalle ses dépendances lui-même si besoin, dès l'étape 5 du reset (`if (!fs.existsSync(node_modules)) npm install`).
+
+Avec `--clean-disk`, le script les supprime à la toute fin (étape 7/7), **après** avoir utilisé/réinstallé `services/nodes/node_modules` pour redéployer le contrat. Conséquence : la **prochaine** commande npm/hardhat lancée localement (hors Docker) devra réinstaller ses dépendances (`npm install` à la racine et dans `services/frontend`, `npm install` dans `services/nodes` avant tout `npx hardhat ...`) — c'est pourquoi ce n'est **pas** le comportement par défaut d'un simple `--yes` : cela ralentirait chaque reset de démo. À réserver aux moments où l'espace disque prime sur la rapidité du prochain reset.
+
 ### Après exécution
 
 - Se reconnecter avec le compte admin (même email qu'avant — voir `.env`, `ADMIN_EMAIL`) ; son mot de passe (`ADMIN_PASSWORD`) est réappliqué automatiquement au redémarrage du backend s'il n'en a pas déjà un (`database.py`, `run_light_migrations`).
@@ -64,7 +77,7 @@ Pour un nettoyage one-shot sans repasser par le script (ex. environnement non st
 
 ```sql
 BEGIN;
-TRUNCATE workflow_steps, workflows, invitations, document_shares, kyc_verifications, notifications, documents
+TRUNCATE workflow_steps, workflows, invitations, document_shares, kyc_verifications, notifications, documents, user_affiliations
   RESTART IDENTITY CASCADE;
 UPDATE users SET created_by = NULL WHERE role <> 'ADMIN';
 DELETE FROM users WHERE role <> 'ADMIN';

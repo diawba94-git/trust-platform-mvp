@@ -3,6 +3,7 @@
  * Réinitialisation complète des données TrustWedge — base PostgreSQL ET blockchain.
  *
  *   node scripts/reset-data.js --yes
+ *   node scripts/reset-data.js --yes --clean-disk   # + libère l'espace disque (voir §7)
  *
  * La blockchain étant immuable, "nettoyer" son contenu ne peut se faire qu'en repartant
  * d'une chaîne vierge : ce script arrête les nœuds Besu, efface leurs données et le
@@ -25,6 +26,14 @@
  *   6. Redémarre backend, identity, documents, verify, exchange, Blockscout et blockscout-db —
  *      indispensable pour que les 4 derniers repartent avec la nouvelle CONTRACT_ADDRESS
  *      (sans quoi ils continueraient de signer/lire sur l'ancien contrat, déjà éteint).
+ *   7. (optionnel, --clean-disk) Supprime les fichiers régénérables qui pèsent le plus sur le
+ *      disque : node_modules/ (racine, services/frontend, services/nodes) et les artefacts
+ *      Hardhat (services/nodes/artifacts, cache). Aucun de ces fichiers n'est nécessaire au
+ *      démarrage (`docker compose up`) : le frontend est buildé dans son image Docker, et
+ *      services/nodes réinstalle ses dépendances lui-même à l'étape 5 si besoin. Désactivé
+ *      par défaut car il force une réinstallation npm (réseau + quelques minutes) à la
+ *      prochaine commande locale (`npm install`, `npx hardhat ...`) — à activer seulement
+ *      quand l'espace disque compte plus que la rapidité du prochain reset.
  */
 
 const fs = require("fs");
@@ -66,6 +75,7 @@ function step(title, fn) {
 // ============================================================
 
 const confirmed = process.argv.includes("--yes");
+const cleanDisk = process.argv.includes("--clean-disk");
 
 console.log(`
 Réinitialisation TrustWedge — PostgreSQL ET blockchain.
@@ -78,7 +88,12 @@ Cette opération est IRRÉVERSIBLE et va :
   - Effacer les données indexées par Blockscout (seront réindexées depuis la chaîne neuve).
 
 Aucune autre donnée (Kong, IPFS) n'est touchée.
-`);
+${cleanDisk ? `
+--clean-disk activé : supprimera aussi node_modules/ (racine, services/frontend,
+services/nodes) et les artefacts Hardhat (services/nodes/artifacts, cache) — à réinstaller
+(npm install) avant toute prochaine commande npm/hardhat locale. Sans effet sur
+\`docker compose up\` (images déjà construites), ni sur les conteneurs déjà démarrés.
+` : ""}`);
 
 if (!confirmed) {
   console.log("Relancer avec --yes pour confirmer et exécuter la réinitialisation.");
@@ -119,7 +134,7 @@ step("1/6 — Arrêt de Besu, Blockscout et des modules backend on-chain", () =>
 step("2/6 — Nettoyage de la base applicative (conservation du/des compte(s) ADMIN)", () => {
   const sql = `
     BEGIN;
-    TRUNCATE workflow_steps, workflows, invitations, document_shares, kyc_verifications, notifications, documents
+    TRUNCATE workflow_steps, workflows, invitations, document_shares, kyc_verifications, notifications, documents, user_affiliations
       RESTART IDENTITY CASCADE;
     UPDATE users SET created_by = NULL WHERE role <> 'ADMIN';
     DELETE FROM users WHERE role <> 'ADMIN';
@@ -224,6 +239,25 @@ step("6/6 — Redémarrage des modules backend on-chain et de Blockscout", () =>
   run("docker", ["compose", "up", "-d", "blockscout-db", "blockscout", "blockscout-frontend"]);
 });
 
+// ============================================================
+// 7. (optionnel, --clean-disk) Nettoyage des fichiers régénérables
+// ============================================================
+//
+// Aucun de ces fichiers n'est requis pour `docker compose up` : le frontend est buildé dans
+// son image Docker (pas de bind-mount de node_modules, voir docker-compose.yml), et
+// services/nodes réinstalle ses dépendances lui-même si besoin (étape 5 ci-dessus). Ils ne
+// servent qu'aux commandes npm/hardhat lancées localement, hors Docker.
+
+if (cleanDisk) {
+  step("7/7 — Nettoyage des fichiers régénérables (--clean-disk)", () => {
+    rm("node_modules");
+    rm("services/frontend/node_modules");
+    rm("services/nodes/node_modules");
+    rm("services/nodes/artifacts");
+    rm("services/nodes/cache");
+  });
+}
+
 console.log(`
 Réinitialisation terminée.
   - Seul le compte ADMIN a été conservé en base (mêmes email/DID qu'avant).
@@ -231,7 +265,12 @@ Réinitialisation terminée.
   - backend, identity, documents, verify et exchange ont été redémarrés avec cette nouvelle
     adresse — auth et storage n'y touchent pas, pas besoin de les redémarrer.
   - Blockscout va réindexer la nouvelle chaîne depuis le bloc 0 (quelques instants).
-
+${cleanDisk ? `
+  - --clean-disk : node_modules/ (racine, frontend, nodes) et les artefacts Hardhat ont été
+    supprimés. Prochaine commande locale nécessaire : \`npm install\` à la racine et dans
+    services/frontend, puis \`npm install\` dans services/nodes avant tout \`npx hardhat ...\`
+    (le prochain \`node scripts/reset-data.js\` le refera automatiquement à l'étape 5).
+` : ""}
 Vérifier : docker compose ps
            curl http://localhost:8000/api/health
 `);

@@ -80,6 +80,9 @@ export interface VerifyResult {
   ipfsCid: string;
   owner_name: string | null;
   issuer_name: string | null;
+  /** Présent uniquement sur la réponse de GET /documents/by-reference — permet d'enchaîner
+   * sur /versions ou /owner-at sans refaire une recherche par référence. */
+  token_id?: number;
 }
 
 export interface DocumentVersionEntry {

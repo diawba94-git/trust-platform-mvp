@@ -4,6 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from datetime import datetime
 from eth_account import Account
+from trustwedge_auth.pii import hash_national_id
 
 from .models import Workflow, WorkflowStatus, WorkflowType, Document, User
 from .schemas import DocumentCreate, Attribute
@@ -48,11 +49,14 @@ class WorkflowEngine:
         d'origine, relayées par identity) plutôt que relues depuis la base : ces champs ne
         sont plus persistés nulle part en clair (seul un hash du n° de CNI l'est, côté
         identity) — le hash stocké et le PDF généré ici ne doivent jamais être reliés par une
-        valeur en clair commune conservée en base."""
+        valeur en clair commune conservée en base.
+
+        doc_key est le hash du n° de CNI, jamais le n° en clair : le contrat écrit ce champ
+        on-chain de façon publique et immuable, un endroit où une PII ne doit jamais figurer."""
         doc = DocumentCreate(
             owner_did=owner_did,
             doc_type="ID_CARD",
-            doc_key=national_id_number,
+            doc_key=hash_national_id(national_id_number) if national_id_number else None,
             attributes=[
                 Attribute(key="Nom", value=last_name or "", valueType="string"),
                 Attribute(key="Prénom", value=first_name or "", valueType="string"),

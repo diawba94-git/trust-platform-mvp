@@ -25,6 +25,21 @@ Créé automatiquement au démarrage du backend (`Base.metadata.create_all`) —
 | `created_at` | DateTime (tz) | default `now()` | |
 | `national_id_number_hash` | String | unique, index, nullable | SHA-256 (`trustwedge_auth.pii.hash_national_id`, normalisé `strip().upper()`) du n° de carte d'identité — jamais stocké en clair ; sert uniquement à la déduplication d'un même individu entre acteurs créateurs différents |
 
+### 1.1bis `user_affiliations`
+
+Rattache une personne déjà identifiée (DID existant, créé par un premier acteur — ex. l'Admin) à un autre acteur (ex. une université) qui a besoin de la retrouver dans son propre périmètre pour lui délivrer un document, sans dupliquer son DID. Distinct de `users.created_by` (qui reste le créateur d'origine, non modifié) : une même personne peut être rattachée à plusieurs institutions au fil du temps.
+
+| Colonne | Type | Contraintes | Description |
+|---|---|---|---|
+| `id` | Integer | PK, index | |
+| `user_id` | Integer | FK → `users.id`, index | Personne rattachée |
+| `institution_id` | Integer | FK → `users.id`, index | Institution à laquelle elle est rattachée |
+| `created_at` | DateTime (tz) | default `now()` | |
+
+Contrainte : `UNIQUE(user_id, institution_id)` (`uq_user_affiliations_user_institution`) — un même rattachement n'est enregistré qu'une fois.
+
+> À vider **avant** `users` lors de tout nettoyage manuel de la base (`TRUNCATE ... user_affiliations` avant `DELETE FROM users`) — ses deux colonnes référencent `users.id` par clé étrangère ; l'oublier fait échouer la suppression avec `violates foreign key constraint`. Voir [11-RESET-DONNEES.md](11-RESET-DONNEES.md) §1.
+
 ### 1.2 `documents`
 
 | Colonne | Type | Contraintes | Description |
@@ -159,6 +174,8 @@ erDiagram
     USERS ||--o{ KYC_VERIFICATIONS : reviews
     USERS ||--o{ NOTIFICATIONS : receives
     USERS ||--o{ USERS : "creates (created_by)"
+    USERS ||--o{ USER_AFFILIATIONS : "is affiliated (user_id)"
+    USERS ||--o{ USER_AFFILIATIONS : "hosts (institution_id)"
 ```
 
 ## 2. Structure de données on-chain (`DocumentRegistry.sol`)

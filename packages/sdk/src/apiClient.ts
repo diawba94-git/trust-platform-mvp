@@ -115,6 +115,19 @@ export class TrustWedgeApiClient {
     return data;
   }
 
+  /**
+   * Recherche par référence métier (doc_type + doc_key), ex: un n° de diplôme ou de titre
+   * foncier — à privilégier sur verifyDocument quand l'appelant n'a pas de token_id, ce qui
+   * est le cas courant pour un tiers externe qui ne connaît que sa propre référence. Public,
+   * sans authentification, même forme de réponse que verifyDocument (token_id inclus).
+   */
+  async getDocumentByReference(docType: string, docKey: string): Promise<VerifyResult> {
+    const { data } = await this.http.get<VerifyResult>("/documents/by-reference", {
+      params: { doc_type: docType, doc_key: docKey },
+    });
+    return data;
+  }
+
   async getDocumentVersions(tokenId: number): Promise<DocumentHistory> {
     const { data } = await this.http.get<DocumentHistory>(`/documents/${tokenId}/versions`);
     return data;

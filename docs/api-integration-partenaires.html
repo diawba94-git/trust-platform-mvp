@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>TrustWedge — Guide d'intégration API</title>
+<style>
+  @page {
+    size: A4;
+    margin: 22mm 18mm 20mm 18mm;
+    @bottom-center {
+      content: "TrustWedge — Guide d'intégration API  ·  page " counter(page) " / " counter(pages);
+      font-size: 8.5pt;
+      color: #7a8a94;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-center { content: none; }
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10.3pt;
+    line-height: 1.5;
+    color: #1c2b33;
+    margin: 0;
+  }
+
+  /* ---------- Cover page ---------- */
+  .cover {
+    page: cover;
+    page-break-after: always;
+    height: 297mm;
+    background: linear-gradient(160deg, #0b3d4c 0%, #0f5c73 55%, #12768f 100%);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 26mm;
+  }
+  .cover .eyebrow {
+    font-size: 11pt;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #9fe6d8;
+    font-weight: 600;
+    margin-bottom: 6mm;
+  }
+  .cover h1 {
+    font-size: 30pt;
+    line-height: 1.15;
+    margin: 0 0 8mm 0;
+    font-weight: 700;
+  }
+  .cover .subtitle {
+    font-size: 13pt;
+    color: #d8eef0;
+    max-width: 130mm;
+    line-height: 1.5;
+    margin-bottom: 18mm;
+  }
+  .cover .meta {
+    border-top: 1px solid rgba(255,255,255,0.3);
+    padding-top: 6mm;
+    font-size: 10pt;
+    color: #cfe8ea;
+  }
+  .cover .meta div { margin-bottom: 2mm; }
+  .cover .badge-row { margin-top: 14mm; }
+  .cover .audience-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 3px;
+    padding: 2.5mm 4mm;
+    font-size: 9pt;
+    margin-right: 3mm;
+    margin-bottom: 2mm;
+  }
+
+  /* ---------- Table of contents ---------- */
+  .toc { page-break-after: always; }
+  .toc h2 { font-size: 16pt; color: #0f5c73; border-bottom: 2px solid #0f5c73; padding-bottom: 2mm; margin-bottom: 6mm; }
+  .toc ol { list-style: none; padding-left: 0; margin: 0; counter-reset: toc-counter; }
+  .toc > ol > li { counter-increment: toc-counter; margin-bottom: 3mm; font-size: 10.5pt; }
+  .toc > ol > li::before { content: counter(toc-counter) ". "; color: #0f5c73; font-weight: 700; }
+  .toc ol ol { margin-top: 1.5mm; margin-bottom: 2mm; padding-left: 7mm; }
+  .toc ol ol li { font-size: 9.3pt; color: #4a5c66; margin-bottom: 1mm; counter-increment: none; }
+  .toc ol ol li::before { content: none; }
+
+  /* ---------- Headings ---------- */
+  h2.section {
+    font-size: 16pt;
+    color: #ffffff;
+    background: #0f5c73;
+    padding: 3mm 5mm;
+    margin: 0 0 6mm 0;
+    page-break-before: always;
+    border-radius: 2px;
+  }
+  h2.section .num { opacity: 0.65; font-weight: 400; margin-right: 2mm; }
+  h3.sub {
+    font-size: 11.5pt;
+    color: #0b3d4c;
+    margin: 7mm 0 2mm 0;
+    padding-bottom: 1mm;
+    border-bottom: 1px solid #d5e4e8;
+  }
+  .section-intro { color: #445760; margin-bottom: 5mm; }
+  .section-intro p { margin: 0 0 3mm 0; }
+
+  /* ---------- Endpoint card ---------- */
+  .endpoint {
+    page-break-inside: avoid;
+    border: 1px solid #d7e2e6;
+    border-radius: 3px;
+    margin-bottom: 5mm;
+    overflow: hidden;
+  }
+  .endpoint-head {
+    background: #eef5f6;
+    padding: 3mm 4mm;
+    display: flex;
+    align-items: baseline;
+    gap: 3mm;
+    border-bottom: 1px solid #d7e2e6;
+  }
+  .method {
+    display: inline-block;
+    font-family: 'Consolas', monospace;
+    font-size: 8.6pt;
+    font-weight: 700;
+    color: #fff;
+    padding: 0.8mm 2.4mm;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .method.get { background: #2274a5; }
+  .method.post { background: #1f8a5f; }
+  .method.delete { background: #b23b3b; }
+  .path { font-family: 'Consolas', monospace; font-size: 10pt; font-weight: 600; color: #0b3d4c; }
+  .endpoint-body { padding: 3mm 4mm; }
+  .meta-row { font-size: 8.8pt; color: #56666e; margin-bottom: 2.5mm; }
+  .meta-row b { color: #1c2b33; }
+  .auth-yes { color: #b23b3b; font-weight: 600; }
+  .auth-no { color: #1f8a5f; font-weight: 600; }
+  .desc { margin: 0 0 3mm 0; }
+  .desc.note { background: #fff8e6; border-left: 3px solid #d8a413; padding: 2mm 3mm; font-size: 9.2pt; color: #5c4a12; margin-bottom: 3mm; }
+
+  table.fields {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.7pt;
+    margin-bottom: 3mm;
+  }
+  table.fields th {
+    background: #f4f8f9;
+    text-align: left;
+    padding: 1.5mm 2.2mm;
+    border: 1px solid #dde8ea;
+    color: #35474f;
+    font-weight: 600;
+  }
+  table.fields td {
+    padding: 1.5mm 2.2mm;
+    border: 1px solid #e6eef0;
+    vertical-align: top;
+  }
+  table.fields code { font-size: 8.3pt; }
+
+  .io-cols { display: flex; gap: 4mm; }
+  .io-col { flex: 1; min-width: 0; }
+  .io-label {
+    font-size: 8.3pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #0f5c73;
+    margin-bottom: 1.5mm;
+  }
+  pre {
+    background: #0b3d4c;
+    color: #d8f0ec;
+    font-family: 'Consolas', monospace;
+    font-size: 7.9pt;
+    line-height: 1.45;
+    padding: 2.5mm 3mm;
+    border-radius: 2px;
+    margin: 0 0 3mm 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  code { font-family: 'Consolas', monospace; background: #eef2f3; padding: 0.2mm 1mm; border-radius: 2px; }
+
+  .errors { font-size: 8.6pt; color: #56666e; margin-top: 2mm; }
+  .errors code { background: #fbeaea; color: #a33; }
+
+  .who-badges span {
+    display: inline-block;
+    background: #e4f0e9;
+    color: #1f6b47;
+    border-radius: 2px;
+    padding: 0.5mm 1.8mm;
+    font-size: 8.2mt;
+    font-size: 8.2pt;
+    margin-right: 1.5mm;
+  }
+
+  /* ---------- Recap table ---------- */
+  table.recap {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.1pt;
+  }
+  table.recap th {
+    background: #0f5c73;
+    color: #fff;
+    padding: 2mm 2mm;
+    text-align: left;
+  }
+  table.recap td {
+    padding: 1.6mm 2mm;
+    border-bottom: 1px solid #e2eaec;
+    vertical-align: top;
+  }
+  table.recap tr:nth-child(even) td { background: #f7fafb; }
+  table.recap .g-title td {
+    background: #dcecee;
+    font-weight: 700;
+    color: #0b3d4c;
+    padding-top: 3mm;
+  }
+
+  .scope-box {
+    border: 1px solid #d7e2e6;
+    border-radius: 3px;
+    padding: 4mm 5mm;
+    background: #f7fafb;
+    font-size: 9.3pt;
+    margin-bottom: 4mm;
+  }
+  .scope-box ul { margin: 2mm 0 0 0; padding-left: 5mm; }
+  .scope-box li { margin-bottom: 1.5mm; }
+
+  .role-table { width: 100%; border-collapse: collapse; font-size: 9pt; margin: 3mm 0; }
+  .role-table th { background: #f4f8f9; text-align: left; padding: 2mm; border: 1px solid #dde8ea; }
+  .role-table td { padding: 2mm; border: 1px solid #e6eef0; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="eyebrow">TrustWedge — Documentation technique</div>
+  <h1>Guide d'intégration API<br>pour les acteurs partenaires</h1>
+  <div class="subtitle">
+    Référence complète des API exposées par la plateforme TrustWedge pour une intégration
+    dans le système d'information des institutions partenaires : entrées attendues, sorties
+    produites, authentification et droits d'accès, pour chaque point d'intégration.
+  </div>
+  <div class="badge-row">
+    <span class="audience-badge">Université</span>
+    <span class="audience-badge">Entreprise</span>
+    <span class="audience-badge">Banque</span>
+    <span class="audience-badge">Notaire</span>
+    <span class="audience-badge">Tiers vérificateur</span>
+  </div>
+  <div class="meta">
+    <div>Version du document : 1.0 — 18 septembre 2026</div>
+    <div>Destiné aux équipes techniques des institutions partenaires intégrant l'API TrustWedge à leur SI</div>
+    <div>Toute la documentation projet : voir docs/README.md</div>
+  </div>
+</div>
+
+<!-- ============ TOC ============ -->
+<div class="toc">
+  <h2>Sommaire</h2>
+  <ol>
+    <li>Conventions communes
+      <ol>
+        <li>URL de base et environnements</li>
+        <li>Authentification (JWT Bearer)</li>
+        <li>Format des requêtes et réponses</li>
+        <li>Gestion des erreurs</li>
+        <li>Rôles applicatifs</li>
+      </ol>
+    </li>
+    <li>Authentification — création et connexion de compte</li>
+    <li>Vérification publique de documents (sans authentification)</li>
+    <li>Divulgation sélective et partage</li>
+    <li>Émission de documents (émetteurs)</li>
+    <li>Gestion des comptes rattachés</li>
+    <li>Workflows métier (vérification, demande de prêt)</li>
+    <li>Transfert de titre foncier à triple signature</li>
+    <li>Vérification d'identité citoyenne (KYC)</li>
+    <li>Notifications</li>
+    <li>Tableau récapitulatif de tous les endpoints</li>
+    <li>Hors périmètre — administration de la plateforme</li>
+  </ol>
+</div>
+
+<!-- ============ 1. CONVENTIONS ============ -->
+<h2 class="section"><span class="num">1.</span>Conventions communes</h2>
+
+<h3 class="sub">1.1 URL de base et environnements</h3>
+<div class="section-intro">
+<p>Toutes les API décrites dans ce document transitent par un point d'entrée HTTP unique
+(passerelle Kong) et partagent le préfixe <code>/api</code> :</p>
+</div>
+<table class="fields">
+<tr><th>Environnement</th><th>URL de base</th></tr>
+<tr><td>Démonstration locale</td><td><code>http://localhost:8000/api</code></td></tr>
+<tr><td>Production / pilote</td><td><code>https://&lt;domaine-ou-ip-de-la-plateforme&gt;:8443/api</code></td></tr>
+</table>
+<p class="section-intro">Un chemin comme <code>/documents/verify/{token_id}</code> dans ce document doit donc être
+appelé à l'URL complète <code>{URL de base}/documents/verify/{token_id}</code>.</p>
+
+<h3 class="sub">1.2 Authentification (JWT Bearer)</h3>
+<div class="section-intro">
+<p>La quasi-totalité des endpoints (à l'exception de ceux explicitement marqués
+<span class="auth-no">Non</span>) exigent un jeton JWT obtenu via
+<code>POST /api/auth/login</code> (voir §2), transmis dans l'en-tête HTTP suivant :</p>
+</div>
+<pre>Authorization: Bearer &lt;access_token&gt;</pre>
+<p class="section-intro">Le jeton encode l'identifiant et le rôle applicatif de l'appelant (<code>sub</code>, <code>role</code>) et
+expire après <code>JWT_EXPIRATION</code> heures (variable d'environnement propre à chaque
+déploiement — se renseigner auprès de l'exploitant de la plateforme). Un jeton expiré ou
+invalide produit une réponse <code>401 Unauthorized</code>.</p>
+
+<h3 class="sub">1.3 Format des requêtes et réponses</h3>
+<table class="fields">
+<tr><th>Élément</th><th>Convention</th></tr>
+<tr><td>Corps de requête</td><td><code>Content-Type: application/json</code>, sauf mention contraire (upload de fichier en <code>multipart/form-data</code>)</td></tr>
+<tr><td>Corps de réponse</td><td><code>application/json</code> dans tous les cas, y compris les erreurs</td></tr>
+<tr><td>Dates</td><td>ISO-8601 avec fuseau (ex. <code>2026-09-18T10:32:00+00:00</code>)</td></tr>
+<tr><td>Identifiants de document</td><td><code>doc_type</code> + <code>doc_key</code> : référence métier à retenir côté intégrateur (ex. n° de diplôme, de titre foncier) — voir <code>GET /documents/by-reference</code>. <code>token_id</code> : entier, identifiant du NFT ERC-721 on-chain, détail d'implémentation interne utile pour enchaîner sur <code>/versions</code> ou <code>/owner-at</code></td></tr>
+<tr><td>Adresses</td><td>Adresses Ethereum au format hexadécimal standard (<code>0x...</code>)</td></tr>
+</table>
+
+<h3 class="sub">1.4 Gestion des erreurs</h3>
+<div class="section-intro">
+<p>Toute erreur renvoie un code HTTP standard accompagné d'un corps JSON de la forme
+<code>{"detail": "message explicite"}</code>. Codes rencontrés dans ce document :</p>
+</div>
+<table class="fields">
+<tr><th>Code</th><th>Signification</th></tr>
+<tr><td><code>400</code></td><td>Requête invalide (champ manquant, valeur incohérente, règle métier non respectée)</td></tr>
+<tr><td><code>401</code></td><td>Authentification absente, invalide ou expirée</td></tr>
+<tr><td><code>403</code></td><td>Authentifié mais rôle/droit insuffisant pour cette action</td></tr>
+<tr><td><code>404</code></td><td>Ressource introuvable (document, workflow, compte...)</td></tr>
+<tr><td><code>409</code></td><td>Conflit avec l'état actuel de la ressource (ex. document déjà transféré)</td></tr>
+<tr><td><code>410</code></td><td>Ressource expirée ou révoquée (lien de partage, preuve de divulgation)</td></tr>
+</table>
+
+<h3 class="sub">1.5 Rôles applicatifs</h3>
+<div class="section-intro"><p>Chaque compte TrustWedge porte un rôle unique, qui détermine les endpoints accessibles :</p></div>
+<table class="role-table">
+<tr><th>Rôle</th><th>Type d'acteur</th></tr>
+<tr><td><code>ISSUER</code></td><td>Émetteur de documents (typiquement une université)</td></tr>
+<tr><td><code>VERIFIER</code></td><td>Vérificateur/émetteur secondaire (typiquement une entreprise)</td></tr>
+<tr><td><code>BANK</code></td><td>Banque — instruction de prêts, revue KYC</td></tr>
+<tr><td><code>NOTARY</code></td><td>Notaire — validation des transferts de titres, revue KYC</td></tr>
+<tr><td><code>USER</code></td><td>Citoyen, titulaire de documents</td></tr>
+<tr><td><code>ADMIN</code></td><td>Administrateur de la plateforme (hors périmètre de ce guide — voir §12)</td></tr>
+</table>
+
+<!-- ============ 2. AUTH ============ -->
+<h2 class="section"><span class="num">2.</span>Authentification</h2>
+<div class="section-intro"><p>Module <code>auth</code> — unique émetteur de jetons JWT sur la plateforme.</p></div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/auth/register</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> tout acteur créant un compte autonome (typiquement un citoyen)</div>
+    <p class="desc">Crée un compte applicatif avec mot de passe. Pour un compte rattaché à une
+    institution (étudiant, employé, client), préférer <code>POST /actors/create-managed-user</code>
+    (§6.1), qui génère en plus un DID et une pièce d'identité numérique.</p>
+    <div class="io-cols">
+      <div class="io-col">
+        <div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>email</code></td><td>string</td><td>Identifiant de connexion, unique</td></tr>
+          <tr><td><code>password</code></td><td>string</td><td>Mot de passe en clair (haché côté serveur, bcrypt)</td></tr>
+          <tr><td><code>full_name</code></td><td>string</td><td>Nom affiché</td></tr>
+          <tr><td><code>role</code></td><td>string</td><td>Rôle applicatif (défaut <code>USER</code>)</td></tr>
+          <tr><td><code>address</code></td><td>string</td><td>Adresse Ethereum associée au compte</td></tr>
+        </table>
+      </div>
+      <div class="io-col">
+        <div class="io-label">Sortie — 200 OK</div>
+        <pre>{
+  "id": 42,
+  "did": "did:ethr:0xabc...",
+  "address": "0xabc...",
+  "email": "contact@partenaire.sn",
+  "full_name": "Mariama Ndiaye",
+  "role": "USER",
+  "is_active": true,
+  "created_at": "2026-09-18T10:00:00+00:00"
+}</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>400</code> email déjà enregistré</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/auth/login</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte existant</div>
+    <p class="desc">Vérifie le mot de passe (bcrypt) et émet le jeton JWT à utiliser sur tous
+    les autres endpoints (§1.2). Un compte provisionné par un administrateur sans mot de
+    passe initial est refusé ici tant qu'un mot de passe ne lui a pas été explicitement
+    défini côté plateforme.</p>
+    <div class="io-cols">
+      <div class="io-col">
+        <div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>email</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>password</code></td><td>string</td><td>&nbsp;</td></tr>
+        </table>
+      </div>
+      <div class="io-col">
+        <div class="io-label">Sortie — 200 OK</div>
+        <pre>{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "token_type": "bearer",
+  "user": { "id": 42, "did": "did:ethr:0xabc...",
+    "email": "contact@partenaire.sn", "full_name": "...",
+    "role": "ISSUER", "is_active": true,
+    "created_at": "2026-09-18T10:00:00+00:00" }
+}</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>401</code> identifiants invalides ou compte sans mot de passe défini</div>
+  </div>
+</div>
+
+<!-- ============ 3. VERIFY ============ -->
+<h2 class="section"><span class="num">3.</span>Vérification publique de documents</h2>
+<div class="section-intro">
+<p>Module <code>verify</code> — <b>point d'intégration principal pour un tiers</b> (recruteur,
+autre banque, administration...) : lecture directe de la blockchain, sans clé de signature,
+sans dépendance à la disponibilité de l'émetteur d'origine. La plupart de ces endpoints
+sont <b>publics</b>, pensés pour être appelés directement depuis le SI d'un tiers (ex. un ATS
+vérifiant automatiquement un diplôme à la réception d'une candidature).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/verify/{token_id}</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> n'importe quel tiers</div>
+    <p class="desc">Vérification canonique d'un document à partir de son identifiant on-chain.
+    Lecture blockchain uniquement (<code>eth_call</code>) — ne peut jamais renvoyer un état falsifié
+    par la plateforme elle-même.</p>
+    <div class="io-cols">
+      <div class="io-col">
+        <div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Paramètre</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>token_id</code></td><td>int (chemin)</td><td>Identifiant du document</td></tr>
+        </table>
+      </div>
+      <div class="io-col">
+        <div class="io-label">Sortie — 200 OK</div>
+        <pre>{
+  "isValid": true,
+  "issuerDid": "did:ethr:0xissuer...",
+  "issuer": "0xissuer...",
+  "owner": "0xowner...",
+  "docType": "DIPLOMA",
+  "docKey": "UCAD-2026-LMD-0421",
+  "ipfsCid": "bafybeigd...",
+  "owner_name": "Mariama Ndiaye",
+  "issuer_name": "Université Cheikh Anta Diop"
+}</pre>
+      </div>
+    </div>
+    <div class="errors"><code>isValid: false</code> si le document a été révoqué — ce n'est pas une erreur HTTP, le champ doit être testé côté appelant.</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/by-reference</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> n'importe quel tiers</div>
+    <p class="desc"><b>Méthode recommandée</b> quand l'appelant connaît sa référence métier
+    (n° de diplôme, de titre foncier, de permis, ...) mais pas le <code>token_id</code> interne
+    TrustWedge — cas courant pour un tiers externe. Même réponse que
+    <code>/documents/verify/{token_id}</code>, avec le <code>token_id</code> en plus pour
+    enchaîner sur <code>/versions</code> ou <code>/owner-at</code> sans refaire une recherche
+    par référence.</p>
+    <div class="io-cols">
+      <div class="io-col">
+        <div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Paramètre</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>doc_type</code></td><td>string (query)</td><td>Type de document, ex: <code>DIPLOMA</code></td></tr>
+          <tr><td><code>doc_key</code></td><td>string (query)</td><td>Référence métier, ex: <code>UCAD-2026-LMD-0421</code></td></tr>
+        </table>
+      </div>
+      <div class="io-col">
+        <div class="io-label">Sortie — 200 OK</div>
+        <pre>{
+  "isValid": true,
+  "issuerDid": "did:ethr:0xissuer...",
+  "issuer": "0xissuer...",
+  "owner": "0xowner...",
+  "docType": "DIPLOMA",
+  "docKey": "UCAD-2026-LMD-0421",
+  "ipfsCid": "bafybeigd...",
+  "owner_name": "Mariama Ndiaye",
+  "issuer_name": "Université Cheikh Anta Diop",
+  "token_id": 42
+}</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>404</code> si aucun document ne correspond à ce couple <code>doc_type</code> / <code>doc_key</code></div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/documents/verify-file</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Identifie un document à partir du seul fichier déposé (sans connaître son
+    <code>token_id</code>) : calcule le CID du fichier et le recherche dans le registre.
+    Requête <code>multipart/form-data</code> (champ <code>file</code>).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>file</code></td><td>fichier</td><td>Le document à identifier</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "isValid": true, "docType": "DIPLOMA", "docKey": "...",
+  "owner_name": "...", "issuer_name": "...",
+  "token_id": 42, "computed_cid": "bafybei...", "match": true }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>404</code> ce fichier ne correspond à aucun document connu</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/documents/{token_id}/verify-file</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Variante ciblée : détecte une falsification en comparant le CID d'un
+    fichier fourni à celui enregistré on-chain pour un <code>token_id</code> déjà connu.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>token_id</code></td><td>int (chemin)</td><td>&nbsp;</td></tr>
+        <tr><td><code>file</code></td><td>fichier (multipart)</td><td>&nbsp;</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "match": true, "computed_cid": "bafybei...", "onchain_cid": "bafybei..." }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/{token_id}/versions</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Historique complet des versions d'un document (utile pour un titre
+    foncier ayant changé de propriétaire) — lu directement on-chain.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>token_id</code></td><td>int (chemin)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "token_id": 42, "doc_type": "LAND_TITLE", "doc_key": "TF-2024-0001",
+  "current_owner": "0x...", "current_owner_name": "Mariama Ndiaye",
+  "current_owner_did": "did:ethr:0x...", "is_active": true,
+  "is_transferable": true, "attributes": [ { "key": "location",
+  "value": "Dakar, Almadies", "valueType": "string" } ],
+  "versions": [ { "version_index": 0, "cid": "bafy...", "owner": "0x...",
+    "owner_name": "...", "timestamp": 1737000000, "is_current": false },
+  { "version_index": 1, "cid": "bafy...", "owner": "0x...",
+    "owner_name": "...", "timestamp": 1758000000, "is_current": true } ] }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/{token_id}/owner-at</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Retrouve le propriétaire d'un document à un instant donné (utile pour
+    reconstituer une chaîne de propriété à une date de référence).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>token_id</code></td><td>int (chemin)</td></tr>
+        <tr><td><code>timestamp</code></td><td>int (requête) — Unix, secondes</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "token_id": 42, "timestamp": 1737000000, "owner": "0xowner..." }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 4. DISCLOSURE / SHARES ============ -->
+<h2 class="section"><span class="num">4.</span>Divulgation sélective et partage</h2>
+<div class="section-intro">
+<p>Permet à un citoyen de ne divulguer qu'un sous-ensemble des champs d'un document (ex. son
+nom et son statut de diplômé, sans le détail de ses notes), ou de partager un document entier
+via un lien à durée de vie limitée. Module <code>exchange</code>.</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/documents/verify-shared</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> n'importe quel tiers scannant un QR de divulgation sélective</div>
+    <p class="desc">Vérifie une preuve de divulgation sélective générée par le wallet mobile
+    du citoyen (signature ECDSA d'un sous-ensemble de champs). Trois garanties vérifiées dans
+    l'ordre : fraîcheur (preuve valable 5 minutes), authenticité (signature), intégrité
+    (chaque champ divulgué est recomparé à la valeur on-chain).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>token_id</code></td><td>int</td><td>&nbsp;</td></tr>
+          <tr><td><code>owner</code></td><td>string</td><td>Adresse du titulaire déclaré</td></tr>
+          <tr><td><code>fields</code></td><td>[{key,label,value}]</td><td>Champs divulgués</td></tr>
+          <tr><td><code>timestamp</code></td><td>int</td><td>Epoch ms, au moment de la signature</td></tr>
+          <tr><td><code>signature</code></td><td>string</td><td>Signature EIP-191 du propriétaire</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "valid": true, "doc_type": "DIPLOMA", "doc_key": "UCAD-2026-...",
+  "owner_name": "Mariama Ndiaye",
+  "fields": [ { "key": "mention", "label": "Mention", "value": "Bien" } ],
+  "verified_at": "2026-09-18T10:05:00+00:00" }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>400</code> signature illisible/horodatage invalide · <code>409</code> document révoqué, propriétaire ne correspond plus, ou champ falsifié · <code>410</code> preuve expirée (&gt;5 min)</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/shares</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> le titulaire du document</div>
+    <p class="desc">Génère un lien de partage à durée de vie limitée pour un document possédé.
+    Le lien ne contient aucune donnée : son ouverture relit toujours l'état réel on-chain.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>token_id</code></td><td>int</td><td>&nbsp;</td></tr>
+          <tr><td><code>access_level</code></td><td>string</td><td><code>"view"</code> ou <code>"download"</code>, défaut <code>view</code></td></tr>
+          <tr><td><code>expires_in_days</code></td><td>int, optionnel</td><td>Défaut 7 jours ; <code>null</code> = sans expiration</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 7, "share_token": "kR3f...", "token_id": 42,
+  "doc_type": "DIPLOMA", "doc_key": "UCAD-2026-...",
+  "access_level": "view", "expires_at": "2026-09-25T10:00:00+00:00",
+  "revoked": false, "created_at": "2026-09-18T10:00:00+00:00" }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> non propriétaire du document · <code>404</code> document introuvable</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/shares/mine</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Liste des liens de partage créés par l'appelant.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div><p style="font-size:9pt;color:#667">Aucun paramètre.</p></div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>[ { "id": 7, "share_token": "kR3f...", "token_id": 42, ... } ]</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/shares/{share_token}</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-no">Non</span> &nbsp;·&nbsp; <b>Qui :</b> quiconque détient le lien</div>
+    <p class="desc">Résolution publique d'un lien de partage — c'est la raison d'être du
+    lien. Relit toujours l'état réel on-chain (jamais de cache), un document révoqué depuis
+    l'émission du lien n'apparaît donc jamais comme valide.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>share_token</code></td><td>string (chemin)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "isValid": true, "docType": "DIPLOMA", "docKey": "UCAD-2026-...",
+  "owner_name": "Mariama Ndiaye", "issuer_name": "UCAD",
+  "access_level": "view", "can_download": false }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>404</code> lien introuvable · <code>410</code> lien révoqué ou expiré</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method delete">DELETE</span><span class="path">/shares/{share_token}</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> le créateur du lien</div>
+    <p class="desc">Révoque un lien de partage — il devient immédiatement inutilisable.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>share_token</code></td><td>string (chemin)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div><pre>{ "revoked": true }</pre></div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> pas à l'origine du lien · <code>404</code> lien introuvable</div>
+  </div>
+</div>
+
+<!-- ============ 5. ISSUE ============ -->
+<h2 class="section"><span class="num">5.</span>Émission de documents</h2>
+<div class="section-intro">
+<p>Module <code>documents</code>. Réservé aux comptes institutionnels
+(<code>ISSUER</code>, <code>VERIFIER</code>, <code>NOTARY</code>, <code>ADMIN</code>) — c'est le point
+d'intégration attendu pour qu'une université ou une entreprise émette automatiquement un
+diplôme ou une attestation depuis son propre système (scolarité, SIRH...).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/documents/issue</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> <span class="who-badges"><span>ISSUER</span><span>VERIFIER</span><span>NOTARY</span><span>ADMIN</span></span></div>
+    <p class="desc">Émet un nouveau document : mint du NFT on-chain, génération automatique
+    du PDF représentatif, upload IPFS, indexation applicative. Le couple
+    (<code>doc_type</code>, <code>doc_key</code>) doit être unique sur toute la plateforme ; un
+    contenu identique ne peut pas non plus être réémis sous une autre référence.</p>
+    <div class="desc note">Le champ <code>file_content</code> est obligatoire dans le schéma
+    mais actuellement <b>ignoré côté serveur</b> : le PDF est toujours régénéré automatiquement
+    à partir des <code>attributes</code> fournis. Envoyer n'importe quelle valeur non vide
+    (ex. <code>"placeholder"</code>) pour satisfaire la validation.</div>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>owner_did</code></td><td>string</td><td>DID du titulaire (<code>did:ethr:0x...</code>)</td></tr>
+          <tr><td><code>doc_type</code></td><td>string</td><td>Ex. <code>DIPLOMA</code>, <code>EMPLOYMENT</code>, <code>LAND_TITLE</code></td></tr>
+          <tr><td><code>doc_key</code></td><td>string</td><td>Référence métier unique au sein du <code>doc_type</code></td></tr>
+          <tr><td><code>attributes</code></td><td>[{key,value,valueType}]</td><td><code>valueType</code> ∈ string/uint256/address/date/boolean</td></tr>
+          <tr><td><code>file_content</code></td><td>string</td><td>Ignoré côté serveur (voir note ci-dessus)</td></tr>
+          <tr><td><code>filename</code></td><td>string</td><td>Nom de fichier indicatif</td></tr>
+          <tr><td><code>is_transferable</code></td><td>bool</td><td>Défaut <code>false</code> ; <code>true</code> pour un titre foncier</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 118, "token_id": 118,
+  "issuer": "0xissuer...", "owner": "0xowner...",
+  "doc_type": "DIPLOMA", "doc_key": "UCAD-2026-LMD-0421",
+  "ipfs_cid": "bafybeigd...", "is_active": true,
+  "is_transferable": false,
+  "attributes": [ { "key": "mention", "value": "Bien", "valueType": "string" } ],
+  "created_at": "2026-09-18T10:00:00+00:00" }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>400</code> référence déjà utilisée (avec un contenu identique ou différent) · <code>403</code> rôle non autorisé à émettre</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/issued</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout émetteur (<code>ADMIN</code>/<code>NOTARY</code> voient tout le registre, les autres uniquement leurs propres émissions)</div>
+    <p class="desc">Liste des documents émis, du point de vue de l'émetteur (utile pour un
+    tableau de bord "diplômes délivrés cette année" côté SI de l'université).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>doc_type</code></td><td>string, optionnel (requête)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK (jusqu'à 50 résultats)</div>
+        <pre>[ { "token_id": 118, "doc_type": "DIPLOMA", "doc_key": "UCAD-2026-...",
+    "issuer": "0x...", "owner": "0x...", "is_active": true,
+    "is_transferable": false, "created_at": "2026-09-18T10:00:00+00:00" } ]</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/my</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Liste des documents dont l'appelant est <b>titulaire</b> (point de vue du
+    citoyen, ou d'une institution détenant elle-même un document).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div><p style="font-size:9pt;color:#667">Aucun paramètre.</p></div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>[ { "id": 3, "token_id": 118, "issuer": "0x...", "issuer_address": "0x...",
+    "owner": "0x...", "doc_type": "DIPLOMA", "doc_key": "UCAD-2026-...",
+    "ipfs_cid": "bafy...", "is_active": true, "is_transferable": false,
+    "attributes": [...], "created_at": "2026-09-18T10:00:00+00:00" } ]</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/documents/download/{cid}</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Télécharge le fichier PDF associé à un CID IPFS.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>cid</code></td><td>string (chemin)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <p style="font-size:9pt">Corps binaire, <code>Content-Type: application/pdf</code>.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 6. ACTORS/DID ============ -->
+<h2 class="section"><span class="num">6.</span>Gestion des comptes rattachés</h2>
+<div class="section-intro">
+<p>Module <code>identity</code>. Permet à une institution de créer, depuis son propre SI, les
+comptes de ses étudiants/employés/clients, avec génération automatique de leur identité
+numérique (DID) et de leur pièce d'identité (<code>ID_CARD</code>).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/actors/create-managed-user</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> <span class="who-badges"><span>ISSUER</span><span>VERIFIER</span><span>BANK</span></span></div>
+    <p class="desc">Crée un compte géré par l'institution appelante et génère son DID. Si
+    la personne existe déjà sur la plateforme (email ou n° de CNI déjà connu), aucun second
+    DID n'est créé : elle est simplement rattachée à l'institution appelante
+    (<code>already_existed: true</code>, sans clé privée redonnée).</p>
+    <table class="fields">
+      <tr><th>Rôle appelant</th><th>Rôles cible autorisés</th></tr>
+      <tr><td><code>ISSUER</code></td><td><code>USER</code> (étudiant)</td></tr>
+      <tr><td><code>VERIFIER</code></td><td><code>USER</code> (employé) ou <code>VERIFIER</code> (autre représentant de l'entreprise)</td></tr>
+      <tr><td><code>BANK</code></td><td><code>USER</code> (client)</td></tr>
+    </table>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>email</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>full_name</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>first_name</code> / <code>last_name</code></td><td>string, optionnels</td><td>Alimentent la pièce d'identité générée</td></tr>
+          <tr><td><code>date_of_birth</code></td><td>string, requis si rôle cible <code>USER</code></td><td>&nbsp;</td></tr>
+          <tr><td><code>place_of_birth</code></td><td>string, requis si rôle cible <code>USER</code></td><td>&nbsp;</td></tr>
+          <tr><td><code>national_id_number</code></td><td>string, requis si rôle cible <code>USER</code></td><td>N° de CNI — jamais stocké en clair (seul un hash SHA-256 l'est, à des fins de dédoublonnage)</td></tr>
+          <tr><td><code>role</code></td><td>string</td><td>Défaut <code>USER</code> — voir table ci-dessus</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 57, "did": "did:ethr:0xnew...", "address": "0xnew...",
+  "private_key": "0xabc123...",
+  "public_key": "0x04...", "email": "etudiant@ucad.sn",
+  "full_name": "Ibrahima Fall", "date_of_birth": "2001-03-14",
+  "place_of_birth": "Thiès", "national_id_number": "1234567890123",
+  "role": "USER", "created_at": "2026-09-18T10:00:00+00:00" }</pre>
+        <p style="font-size:8.3pt;color:#a33;margin-top:1.5mm">⚠ <code>private_key</code> n'est
+        retournée qu'une seule fois, à la création — à transmettre immédiatement et de façon
+        sécurisée à la personne concernée, jamais journalisée en clair.</p>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> rôle appelant non autorisé à créer des comptes, ou rôle cible non autorisé pour ce type d'institution</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/did/my</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Récupère ses propres identifiants (DID, adresse, clé privée déchiffrée à
+    la volée). Utile pour un service technique ayant besoin de signer localement.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div><p style="font-size:9pt;color:#667">Aucun paramètre.</p></div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 57, "did": "did:ethr:0x...", "address": "0x...",
+  "private_key": "0xabc123...", "public_key": "0x04...",
+  "email": "etudiant@ucad.sn", "full_name": "Ibrahima Fall", "role": "USER" }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/did/regenerate</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié</div>
+    <p class="desc">Régénère une nouvelle paire de clés (ex. en cas de compromission
+    suspectée). L'ancienne clé est révoquée ; les rôles on-chain sont automatiquement
+    déplacés vers la nouvelle adresse.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div><p style="font-size:9pt;color:#667">Aucun paramètre.</p></div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "status": "regenerated", "new_address": "0xnew...",
+  "new_did": "did:ethr:0xnew..." }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 7. WORKFLOWS ============ -->
+<h2 class="section"><span class="num">7.</span>Workflows métier</h2>
+<div class="section-intro">
+<p>Module <code>documents</code>. Machine à états générique utilisée pour la vérification de
+diplôme, la vérification d'attestation d'emploi et l'instruction d'une demande de prêt.
+Cycle : <code>PENDING → IN_PROGRESS → AWAITING_VERIFICATION → IN_PROGRESS →
+AWAITING_NOTARY → COMPLETED</code> (ou <code>REJECTED</code>/<code>CANCELLED</code> à toute étape
+autorisée). Le transfert de titre foncier suit un circuit séparé, plus fort
+cryptographiquement (§8).</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/workflows/create</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> tout compte authentifié (l'appelant devient l'initiateur)</div>
+    <p class="desc">Démarre un nouveau workflow.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+          <tr><td><code>workflow_type</code></td><td>string</td><td><code>DIPLOMA_VERIFICATION</code> / <code>EMPLOYMENT_VERIFICATION</code> / <code>LOAN_APPLICATION</code> / <code>ID_CARD_ISSUANCE</code> (le transfert foncier utilise §8, pas ce endpoint)</td></tr>
+          <tr><td><code>target_user_id</code></td><td>int, optionnel</td><td>Vérificateur ou banque désignée</td></tr>
+          <tr><td><code>document_token_id</code></td><td>int, optionnel</td><td>Document concerné</td></tr>
+          <tr><td><code>document_cid</code></td><td>string, optionnel</td><td>&nbsp;</td></tr>
+          <tr><td><code>workflow_data</code></td><td>objet libre, optionnel</td><td>Données métier additionnelles</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "workflow_id": 91, "status": "PENDING" }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h3 class="sub">7.2 Actions sur un workflow existant</h3>
+<p class="section-intro">Chaque action renvoie la même forme de réponse :
+<code>{ "workflow_id": &lt;int&gt;, "status": &lt;nouvel état&gt; }</code>. Toutes exigent une
+authentification, et seule la partie autorisée pour l'étape peut agir (initiateur,
+vérificateur désigné ou notaire désigné selon l'action).</p>
+<table class="fields">
+<tr><th>Méthode &amp; chemin</th><th>Qui</th><th>Entrée (corps JSON)</th><th>Effet</th></tr>
+<tr><td><code>POST /workflows/{id}/start</code></td><td>Initiateur</td><td>—</td><td><code>PENDING → IN_PROGRESS</code></td></tr>
+<tr><td><code>POST /workflows/{id}/request-verification</code></td><td>Initiateur</td><td><code>{ verifier_id, verification_data? }</code></td><td><code>→ AWAITING_VERIFICATION</code></td></tr>
+<tr><td><code>POST /workflows/{id}/submit-verification</code></td><td>Vérificateur désigné</td><td><code>{ is_valid, notes? }</code></td><td><code>→ IN_PROGRESS</code> ou <code>REJECTED</code></td></tr>
+<tr><td><code>POST /workflows/{id}/request-notary</code></td><td>Initiateur</td><td><code>{ notary_id }</code></td><td><code>→ AWAITING_NOTARY</code></td></tr>
+<tr><td><code>POST /workflows/{id}/validate-by-notary</code></td><td>Notaire désigné</td><td><code>{ is_valid, notes?, transaction_hash? }</code></td><td><code>→ COMPLETED</code> ou <code>REJECTED</code></td></tr>
+<tr><td><code>POST /workflows/{id}/cancel</code></td><td>Initiateur</td><td><code>{ reason? }</code></td><td><code>→ CANCELLED</code> (impossible si déjà <code>COMPLETED</code>/<code>REJECTED</code>)</td></tr>
+</table>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/workflows/{workflow_id}/status</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span></div>
+    <p class="desc">État détaillé d'un workflow, avec son historique d'étapes.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "workflow_id": 91, "status": "AWAITING_NOTARY",
+  "workflow_type": "LOAN_APPLICATION", "initiator_id": 12,
+  "target_user_id": 3, "notary_id": null, "document_token_id": 118,
+  "workflow_data": {}, "created_at": "...", "updated_at": "...",
+  "completed_at": null,
+  "steps": [ { "step_name": "start", "action": "start_workflow",
+    "status": "DONE", "created_at": "..." } ] }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/workflows/my</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span></div>
+    <p class="desc">Liste des workflows où l'appelant est partie prenante (initiateur, vérificateur ou notaire).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>status</code></td><td>string, optionnel (requête)</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>[ { "id": 91, "type": "LOAN_APPLICATION", "status": "AWAITING_NOTARY",
+    "initiator_id": 12, "target_user_id": 3, "notary_id": null,
+    "document_token_id": 118, "workflow_data": {},
+    "created_at": "...", "updated_at": "..." } ]</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 8. TRANSFER ============ -->
+<h2 class="section"><span class="num">8.</span>Transfert de titre foncier à triple signature</h2>
+<div class="section-intro">
+<p>Module <code>exchange</code>. Circuit dédié aux titres fonciers (<code>is_transferable: true</code>),
+plus fort qu'un simple changement de statut applicatif : vendeur et acheteur signent chacun
+avec leur clé privée, le notaire finalise et exécute le transfert ERC-721 on-chain.</p>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/workflows/transfer/initiate</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> le vendeur (titulaire actuel)</div>
+    <p class="desc">Met en vente un titre possédé, signé de la clé privée du vendeur.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Champ</th><th>Type</th></tr>
+        <tr><td><code>token_id</code></td><td>int</td></tr>
+        <tr><td><code>buyer_email</code></td><td>string — l'acheteur doit déjà avoir un compte</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "workflow_id": 205, "status": "AWAITING_VERIFICATION", "tx_hash": "0x..." }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> non propriétaire · <code>400</code> document non transférable, ou vente à soi-même · <code>404</code> acheteur introuvable</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/workflows/transfer/accept</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> l'acheteur désigné</div>
+    <p class="desc">Accepte l'offre et signe à son tour. Un notaire disponible est
+    automatiquement désigné pour la finalisation.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Champ</th><th>Type</th></tr>
+        <tr><td><code>workflow_id</code></td><td>int</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "workflow_id": 205, "status": "AWAITING_NOTARY", "tx_hash": "0x..." }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> non acheteur désigné · <code>400</code> offre non en attente de signature, ou aucun notaire disponible</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/workflows/transfer/notary-finalize</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> <span class="who-badges"><span>NOTARY</span></span> désigné pour ce transfert</div>
+    <p class="desc">Finalise : transfert de propriété exécuté on-chain, nouveau titre PDF
+    régénéré au nom de l'acheteur et republié sur IPFS.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Champ</th><th>Type</th></tr>
+        <tr><td><code>workflow_id</code></td><td>int</td></tr>
+        <tr><td><code>notes</code></td><td>string, optionnel</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "status": "completed", "new_cid": "bafybei...", "tx_hash": "0x..." }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> réservé aux notaires / non désigné pour ce transfert · <code>400</code> transfert non en attente de finalisation</div>
+  </div>
+</div>
+
+<!-- ============ 9. KYC ============ -->
+<h2 class="section"><span class="num">9.</span>Vérification d'identité citoyenne (KYC)</h2>
+<div class="section-intro">
+<p>Parcours transverse (module <code>backend</code>) préalable à une demande de prêt ou un
+transfert foncier : étapes techniques sans état (OTP, OCR, correspondance faciale — publiques,
+avant qu'un JWT existe), suivies d'un dossier persisté soumis à la revue d'une banque ou d'un
+notaire.</p>
+</div>
+
+<h3 class="sub">9.1 Étapes techniques (public, sans authentification)</h3>
+<table class="fields">
+<tr><th>Méthode &amp; chemin</th><th>Entrée</th><th>Sortie</th></tr>
+<tr><td><code>POST /verification/phone/send</code></td><td><code>{ phone }</code></td><td><code>{ token, dev_code }</code> — <code>dev_code</code> uniquement en environnement de démo (SMS non branché) ; en production, seul le SMS porte le code</td></tr>
+<tr><td><code>POST /verification/phone/verify</code></td><td><code>{ token, code }</code></td><td><code>{ verified: bool }</code></td></tr>
+<tr><td><code>POST /verification/email/send</code></td><td><code>{ email }</code></td><td><code>{ token }</code></td></tr>
+<tr><td><code>POST /verification/email/verify</code></td><td><code>{ token }</code></td><td><code>{ verified: bool }</code></td></tr>
+<tr><td><code>POST /verification/id-card/extract</code></td><td><code>{ image_base64 }</code></td><td><code>{ nom, prenom, date_naissance, num_cni, nationalite }</code> — OCR réel (Tesseract)</td></tr>
+<tr><td><code>POST /verification/face/compare</code></td><td><code>{ card_image_base64, selfie_image_base64 }</code></td><td><code>{ matched, similarity, mocked: true }</code> — <b>correspondance simulée</b>, à ne jamais présenter comme probante en production</td></tr>
+</table>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/verification/kyc/submit</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> le citoyen (typiquement depuis le wallet mobile, à l'issue des étapes ci-dessus)</div>
+    <p class="desc">Persiste le dossier KYC complet pour permettre une revue humaine.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields">
+          <tr><th>Champ</th><th>Type</th></tr>
+          <tr><td><code>full_name</code></td><td>string</td></tr>
+          <tr><td><code>id_card_number</code></td><td>string, optionnel</td></tr>
+          <tr><td><code>id_card_data</code></td><td>objet — sortie brute de l'OCR</td></tr>
+          <tr><td><code>phone_verified</code> / <code>email_verified</code> / <code>face_match_passed</code></td><td>bool</td></tr>
+        </table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 14, "user_id": 57, "full_name": "Ibrahima Fall",
+  "id_card_number": "1234567890123", "phone_verified": true,
+  "email_verified": true, "face_match_passed": true,
+  "status": "PENDING", "reviewer_notes": null,
+  "created_at": "2026-09-18T10:10:00+00:00", "reviewed_at": null }</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/verification/kyc/pending</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> <span class="who-badges"><span>BANK</span><span>NOTARY</span></span></div>
+    <p class="desc">File des dossiers KYC à revoir.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Paramètre</th><th>Type</th></tr>
+        <tr><td><code>status</code></td><td>string, optionnel — défaut <code>PENDING</code></td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div><pre>[ { "id": 14, "user_id": 57, "full_name": "...", "status": "PENDING", ... } ]</pre></div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> réservé à la banque et au notaire</div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method get">GET</span><span class="path">/verification/kyc/mine</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> le citoyen concerné</div>
+    <p class="desc">Statut du dossier KYC de l'appelant (le plus récent).</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div><pre>{ "id": 14, "status": "APPROVED", ... } // ou null si aucun dossier</pre></div>
+    </div>
+  </div>
+</div>
+
+<div class="endpoint">
+  <div class="endpoint-head"><span class="method post">POST</span><span class="path">/verification/kyc/{kyc_id}/review</span></div>
+  <div class="endpoint-body">
+    <div class="meta-row"><b>Authentification requise :</b> <span class="auth-yes">Oui</span> &nbsp;·&nbsp; <b>Qui :</b> <span class="who-badges"><span>BANK</span><span>NOTARY</span></span></div>
+    <p class="desc">Décision humaine sur un dossier KYC en attente.</p>
+    <div class="io-cols">
+      <div class="io-col"><div class="io-label">Entrée</div>
+        <table class="fields"><tr><th>Champ</th><th>Type</th></tr>
+        <tr><td><code>approve</code></td><td>bool</td></tr>
+        <tr><td><code>notes</code></td><td>string, optionnel</td></tr></table>
+      </div>
+      <div class="io-col"><div class="io-label">Sortie — 200 OK</div>
+        <pre>{ "id": 14, "status": "APPROVED", "reviewer_notes": "Pièces conformes",
+  "reviewed_at": "2026-09-18T11:00:00+00:00", ... }</pre>
+      </div>
+    </div>
+    <div class="errors">Erreurs : <code>403</code> réservé à la banque et au notaire · <code>404</code> dossier introuvable · <code>400</code> dossier déjà traité</div>
+  </div>
+</div>
+
+<!-- ============ 10. NOTIFICATIONS ============ -->
+<h2 class="section"><span class="num">10.</span>Notifications</h2>
+<div class="section-intro">
+<p>Module <code>backend</code> (core). Permet à un SI partenaire de relever les événements
+concernant ses comptes gérés (document reçu, transfert accepté...) sans avoir à interroger
+chaque endpoint métier individuellement.</p>
+</div>
+<table class="fields">
+<tr><th>Méthode &amp; chemin</th><th>Entrée</th><th>Sortie</th></tr>
+<tr><td><code>GET /notifications</code></td><td>—</td><td><code>[{ id, type, message, workflow_id, token_id, read, created_at }]</code></td></tr>
+<tr><td><code>POST /notifications/{id}/read</code></td><td>—</td><td>Marque une notification comme lue</td></tr>
+<tr><td><code>POST /notifications/read-all</code></td><td>—</td><td>Marque toutes les notifications comme lues</td></tr>
+<tr><td><code>DELETE /notifications</code></td><td>—</td><td>Purge les notifications de l'appelant</td></tr>
+</table>
+<p class="section-intro">Toutes exigent une authentification. Types de notification rencontrés :
+<code>document_issued</code>, <code>transfer_request</code>, <code>transfer_accepted</code>,
+<code>notary_requested</code>, <code>transfer_completed</code>.</p>
+
+<h3 class="sub">10.5 Canal temps réel (optionnel)</h3>
+<p class="section-intro">Un WebSocket <code>ws://{hôte}:8000/ws/{user_id}</code> pousse les mêmes
+événements en temps réel, pour un SI souhaitant éviter le polling de <code>GET /notifications</code>.
+Format des messages poussés :</p>
+<pre>{ "type": "document_issued", "token_id": 118, "doc_type": "DIPLOMA" }</pre>
+
+<!-- ============ 11. RECAP ============ -->
+<h2 class="section"><span class="num">11.</span>Tableau récapitulatif</h2>
+<table class="recap">
+<tr><th>Méthode</th><th>Chemin</th><th>Auth</th><th>Acteurs</th><th>Description</th></tr>
+
+<tr class="g-title"><td colspan="5">Authentification</td></tr>
+<tr><td>POST</td><td>/auth/register</td><td>Non</td><td>Tous</td><td>Créer un compte autonome</td></tr>
+<tr><td>POST</td><td>/auth/login</td><td>Non</td><td>Tous</td><td>Obtenir un jeton JWT</td></tr>
+
+<tr class="g-title"><td colspan="5">Vérification publique</td></tr>
+<tr><td>GET</td><td>/documents/verify/{token_id}</td><td>Non</td><td>Tout tiers</td><td>Vérifier un document par son ID</td></tr>
+<tr><td>GET</td><td>/documents/by-reference</td><td>Non</td><td>Tout tiers</td><td>Vérifier un document par sa référence métier (doc_type + doc_key)</td></tr>
+<tr><td>POST</td><td>/documents/verify-file</td><td>Oui</td><td>Tous</td><td>Identifier un document par son fichier</td></tr>
+<tr><td>POST</td><td>/documents/{token_id}/verify-file</td><td>Oui</td><td>Tous</td><td>Détecter une falsification de fichier</td></tr>
+<tr><td>GET</td><td>/documents/{token_id}/versions</td><td>Oui</td><td>Tous</td><td>Historique des versions</td></tr>
+<tr><td>GET</td><td>/documents/{token_id}/owner-at</td><td>Oui</td><td>Tous</td><td>Propriétaire à une date donnée</td></tr>
+
+<tr class="g-title"><td colspan="5">Divulgation sélective et partage</td></tr>
+<tr><td>POST</td><td>/documents/verify-shared</td><td>Non</td><td>Tout tiers</td><td>Vérifier une preuve de divulgation sélective</td></tr>
+<tr><td>POST</td><td>/shares</td><td>Oui</td><td>Titulaire</td><td>Créer un lien de partage</td></tr>
+<tr><td>GET</td><td>/shares/mine</td><td>Oui</td><td>Tous</td><td>Lister ses liens de partage</td></tr>
+<tr><td>GET</td><td>/shares/{share_token}</td><td>Non</td><td>Tout tiers</td><td>Résoudre un lien de partage</td></tr>
+<tr><td>DELETE</td><td>/shares/{share_token}</td><td>Oui</td><td>Créateur du lien</td><td>Révoquer un lien de partage</td></tr>
+
+<tr class="g-title"><td colspan="5">Émission de documents</td></tr>
+<tr><td>POST</td><td>/documents/issue</td><td>Oui</td><td>ISSUER, VERIFIER, NOTARY, ADMIN</td><td>Émettre un document</td></tr>
+<tr><td>GET</td><td>/documents/issued</td><td>Oui</td><td>Émetteurs</td><td>Documents émis par l'appelant</td></tr>
+<tr><td>GET</td><td>/documents/my</td><td>Oui</td><td>Tous</td><td>Documents détenus par l'appelant</td></tr>
+<tr><td>GET</td><td>/documents/download/{cid}</td><td>Oui</td><td>Tous</td><td>Télécharger le PDF d'un document</td></tr>
+
+<tr class="g-title"><td colspan="5">Comptes rattachés</td></tr>
+<tr><td>POST</td><td>/actors/create-managed-user</td><td>Oui</td><td>ISSUER, VERIFIER, BANK</td><td>Créer un compte géré (étudiant/employé/client)</td></tr>
+<tr><td>GET</td><td>/did/my</td><td>Oui</td><td>Tous</td><td>Récupérer ses identifiants DID</td></tr>
+<tr><td>POST</td><td>/did/regenerate</td><td>Oui</td><td>Tous</td><td>Régénérer sa paire de clés</td></tr>
+
+<tr class="g-title"><td colspan="5">Workflows métier</td></tr>
+<tr><td>POST</td><td>/workflows/create</td><td>Oui</td><td>Tous</td><td>Démarrer un workflow</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/start</td><td>Oui</td><td>Initiateur</td><td>Démarrer</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/request-verification</td><td>Oui</td><td>Initiateur</td><td>Demander une vérification</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/submit-verification</td><td>Oui</td><td>Vérificateur désigné</td><td>Soumettre le résultat</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/request-notary</td><td>Oui</td><td>Initiateur</td><td>Demander une validation notariale</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/validate-by-notary</td><td>Oui</td><td>Notaire désigné</td><td>Valider/rejeter</td></tr>
+<tr><td>POST</td><td>/workflows/{id}/cancel</td><td>Oui</td><td>Initiateur</td><td>Annuler</td></tr>
+<tr><td>GET</td><td>/workflows/{id}/status</td><td>Oui</td><td>Parties prenantes</td><td>État détaillé</td></tr>
+<tr><td>GET</td><td>/workflows/my</td><td>Oui</td><td>Tous</td><td>Ses workflows</td></tr>
+
+<tr class="g-title"><td colspan="5">Transfert de titre foncier</td></tr>
+<tr><td>POST</td><td>/workflows/transfer/initiate</td><td>Oui</td><td>Vendeur</td><td>Mettre en vente</td></tr>
+<tr><td>POST</td><td>/workflows/transfer/accept</td><td>Oui</td><td>Acheteur</td><td>Accepter l'offre</td></tr>
+<tr><td>POST</td><td>/workflows/transfer/notary-finalize</td><td>Oui</td><td>NOTARY</td><td>Finaliser le transfert</td></tr>
+
+<tr class="g-title"><td colspan="5">KYC</td></tr>
+<tr><td>POST</td><td>/verification/phone/send, /phone/verify</td><td>Non</td><td>Tous</td><td>OTP téléphone</td></tr>
+<tr><td>POST</td><td>/verification/email/send, /email/verify</td><td>Non</td><td>Tous</td><td>OTP email</td></tr>
+<tr><td>POST</td><td>/verification/id-card/extract</td><td>Non</td><td>Tous</td><td>OCR carte d'identité</td></tr>
+<tr><td>POST</td><td>/verification/face/compare</td><td>Non</td><td>Tous</td><td>Correspondance faciale (simulée)</td></tr>
+<tr><td>POST</td><td>/verification/kyc/submit</td><td>Oui</td><td>Citoyen</td><td>Soumettre le dossier KYC</td></tr>
+<tr><td>GET</td><td>/verification/kyc/pending</td><td>Oui</td><td>BANK, NOTARY</td><td>Dossiers à revoir</td></tr>
+<tr><td>GET</td><td>/verification/kyc/mine</td><td>Oui</td><td>Citoyen</td><td>Statut de son dossier</td></tr>
+<tr><td>POST</td><td>/verification/kyc/{id}/review</td><td>Oui</td><td>BANK, NOTARY</td><td>Décision de revue</td></tr>
+
+<tr class="g-title"><td colspan="5">Notifications</td></tr>
+<tr><td>GET</td><td>/notifications</td><td>Oui</td><td>Tous</td><td>Lister ses notifications</td></tr>
+<tr><td>POST</td><td>/notifications/{id}/read</td><td>Oui</td><td>Tous</td><td>Marquer comme lue</td></tr>
+<tr><td>POST</td><td>/notifications/read-all</td><td>Oui</td><td>Tous</td><td>Tout marquer comme lu</td></tr>
+<tr><td>DELETE</td><td>/notifications</td><td>Oui</td><td>Tous</td><td>Purger ses notifications</td></tr>
+<tr><td>WS</td><td>/ws/{user_id}</td><td>—</td><td>Tous</td><td>Flux temps réel (optionnel)</td></tr>
+</table>
+
+<!-- ============ 12. OUT OF SCOPE ============ -->
+<h2 class="section"><span class="num">12.</span>Hors périmètre de ce document</h2>
+<div class="scope-box">
+<p>Les endpoints suivants relèvent de l'<b>administration de la plateforme TrustWedge
+elle-même</b> (rôle <code>ADMIN</code>, exploité par l'équipe TrustWedge) et non d'une intégration
+par le SI d'une institution partenaire — ils ne sont donc pas détaillés ici :</p>
+<ul>
+<li><code>POST /admin/actors/create</code> — provisionnement initial d'un compte institutionnel (fait par TrustWedge à l'onboarding d'un partenaire)</li>
+<li><code>POST /admin/actors/{id}/set-password</code> — définition du mot de passe d'un acteur nouvellement créé</li>
+<li><code>POST /admin/land-titles/ocr-extract</code>, <code>POST /admin/land-titles/import</code> — import assisté de titres fonciers existants</li>
+<li><code>GET /admin/documents</code>, <code>GET /admin/workflows</code> — vue d'ensemble de tous les documents/workflows de la plateforme</li>
+<li><code>GET /stats/overview</code>, <code>GET /stats/activity</code>, <code>GET /network/status</code> — indicateurs de supervision de la plateforme</li>
+</ul>
+<p style="margin-top:3mm">Pour toute question sur l'onboarding d'une nouvelle institution ou
+l'accès à ces fonctions, contacter l'équipe d'exploitation TrustWedge.</p>
+</div>
+
+</body>
+</html>

@@ -98,6 +98,14 @@ class BlockchainClient:
             raise ValueError("Contract not deployed")
         return self.contract.functions.existsByTypeAndKey(doc_type, doc_key).call()
 
+    def get_token_id_by_type_and_key(self, doc_type: str, doc_key: str) -> int:
+        """Retrouve le token_id à partir de la référence métier (docType + docKey) d'un
+        document — permet à un acteur de vérifier ou consulter un document sans connaître
+        son Token ID interne au préalable."""
+        if not self.contract:
+            raise ValueError("Contract not deployed")
+        return self.contract.functions.getTokenIdByTypeAndKey(doc_type, doc_key).call()
+
     def get_document_by_type_and_key(self, doc_type: str, doc_key: str) -> Dict:
         if not self.contract:
             raise ValueError("Contract not deployed")

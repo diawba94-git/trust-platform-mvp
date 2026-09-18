@@ -27,6 +27,27 @@ def verify_document(token_id: int):
     return result
 
 
+@router.get("/documents/by-reference")
+def get_document_by_reference(doc_type: str, doc_key: str):
+    """Public, sans authentification, même contrat que GET /documents/verify/{token_id}.
+    Recherche par référence métier (doc_type + doc_key) — un acteur externe connaît sa
+    référence (n° de diplôme, de titre foncier, ...) mais pas le token_id interne
+    TrustWedge. Renvoie la même forme de réponse, avec le token_id en plus pour permettre
+    d'enchaîner sur /versions ou /owner-at sans refaire une recherche par référence."""
+    if not blockchain_client.exists_by_type_and_key(doc_type, doc_key):
+        raise HTTPException(status_code=404, detail="Aucun document ne correspond à cette référence")
+
+    token_id = blockchain_client.get_token_id_by_type_and_key(doc_type, doc_key)
+    result = blockchain_client.verify_document(token_id)
+    names = identity_client.resolve_by_address([result.get("owner"), result.get("issuer")])
+    owner = names.get(result.get("owner"))
+    issuer = names.get(result.get("issuer"))
+    result["owner_name"] = owner["full_name"] if owner else None
+    result["issuer_name"] = issuer["full_name"] if issuer else None
+    result["token_id"] = token_id
+    return result
+
+
 @router.post("/documents/{token_id}/verify-file")
 async def verify_file(token_id: int, file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     """Détecte une falsification : calcule le CID IPFS du fichier fourni (sans le stocker)
